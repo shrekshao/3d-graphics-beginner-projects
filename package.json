@@ -6,7 +6,7 @@
     "dev": "vitepress dev",
     "build": "vitepress build",
     "preview": "vitepress preview",
-    "fix": "eslint --ext .ts,.vue --ignore-path .gitignore --fix"
+    "fix": "eslint --ext .ts,.vue --ignore-path .gitignore --fix ."
   },
   "author": "",
   "license": "BSD-3-Clause",
@@ -16,7 +16,10 @@
     "@vue/eslint-config-typescript": "^11.0.2",
     "@webgpu/types": "^0.1.30",
     "eslint": "^8.36.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-vue": "^9.10.0",
+    "prettier": "^2.8.7",
     "typescript": "^5.0.2",
     "vite-raw-plugin": "^1.0.1",
     "vitepress": "^1.0.0-alpha.63",
