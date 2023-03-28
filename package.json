@@ -12,6 +12,7 @@
   "devDependencies": {
     "@webgpu/types": "^0.1.30",
     "typescript": "^5.0.2",
+    "vite-raw-plugin": "^1.0.1",
     "vitepress": "^1.0.0-alpha.63",
     "vitepress-plugin-auto-sidebar": "^1.0.6"
   }
