@@ -1,4 +1,8 @@
 <script lang='ts'>
+
+// import triangleVertWGSL from '../src/shaders/triangle.vert.wgsl';
+// import redFragWGSL from '../src/shaders/red.frag.wgsl';
+
 const triangleVertWGSL = `
 @vertex
 fn main(

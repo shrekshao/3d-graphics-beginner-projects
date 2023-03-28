@@ -34,7 +34,11 @@
     "lessons/**/*.ts",
     "lessons/**/*.tsx",
     "lessons/**/*.d.ts",
-    "lessons/**/*.vue"
+    "lessons/**/*.vue",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.ts",
+    "src/**/*.vue"
   ],
   "exclude": [
     "**/node_modules/**",
