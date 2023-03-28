@@ -27,6 +27,8 @@
   },
   "include": [
     ".vitepress/config.ts",
+    "vite.config.ts",
+    "shims.d.ts",
     "projects/**/*.ts",
     "projects/**/*.tsx",
     "projects/**/*.d.ts",
