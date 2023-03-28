@@ -2,7 +2,7 @@
 // import ProjectCanvas from './project-canvas.vue';
 import ProjectCanvas from './gpu-canvas.vue';
 import triangleVertWGSL from '../src/shaders/triangle.vert.wgsl';
-import fragWGSL from '../src/shaders/yellow.frag.wgsl';
+import fragWGSL from '../src/shaders/red.frag.wgsl';
 
 function init(context: GPUCanvasContext, device: GPUDevice): void {
   // console.log(device);
@@ -49,7 +49,7 @@ function init(context: GPUCanvasContext, device: GPUDevice): void {
         colorAttachments: [
           {
             view: textureView,
-            clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+            clearValue: { r: 0.0, g: 0.0, b: 0.3, a: 1.0 },
             loadOp: 'clear',
             storeOp: 'store',
           },
