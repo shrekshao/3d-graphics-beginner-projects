@@ -27,10 +27,14 @@
   },
   "include": [
     ".vitepress/config.ts",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.d.ts",
-    "src/**/*.vue"
+    "projects/**/*.ts",
+    "projects/**/*.tsx",
+    "projects/**/*.d.ts",
+    "projects/**/*.vue",
+    "lessons/**/*.ts",
+    "lessons/**/*.tsx",
+    "lessons/**/*.d.ts",
+    "lessons/**/*.vue"
   ],
   "exclude": [
     "**/node_modules/**",
