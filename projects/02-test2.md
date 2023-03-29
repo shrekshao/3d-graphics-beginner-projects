@@ -7,4 +7,4 @@ bbb
 
 <!-- <ProjectCanvas /> -->
 <!-- <ProjectCanvas :init="init"/> -->
-<ProjectCanvas @init="init"/>
+<ProjectCanvas @init="init" :width=300 :height=300 />
