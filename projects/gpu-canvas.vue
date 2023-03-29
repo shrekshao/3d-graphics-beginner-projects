@@ -7,9 +7,9 @@ const emit = defineEmits<{
 }>();
 
 const props = defineProps<{
-  width?: number,
-  height?: number,
-  device?: GPUDevice
+  width?: number;
+  height?: number;
+  device?: GPUDevice;
 }>();
 
 // type WebGPUInit = (context: GPUCanvasContext, device: GPUDevice) => void;
@@ -26,7 +26,6 @@ onMounted(async () => {
 
   emit('init', context, device);
 });
-
 
 // export default defineComponent({
 //   // props: defineProps<{
