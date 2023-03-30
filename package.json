@@ -24,5 +24,8 @@
     "vite-raw-plugin": "^1.0.1",
     "vitepress": "^1.0.0-alpha.63",
     "vitepress-plugin-auto-sidebar": "^1.0.6"
+  },
+  "dependencies": {
+    "gl-matrix": "^3.4.3"
   }
 }
