@@ -1,10 +1,11 @@
 // import triangleVertWGSL from '../src/shaders/triangle.vert.wgsl';
 // import fragWGSL from '../src/shaders/red.frag.wgsl';
-import shaderWGSL from '../src/shaders/05/code.wgsl';
+// import shaderWGSL from '../src/shaders/05/code.wgsl';
 
 import { TinyGltfWebGpu } from '../src/utils/tiny-gltf';
 import OrbitCamera from '../src/utils/orbitCamera';
 import { mat4 } from 'gl-matrix';
+import shaderWGSL from '../src/shaders/05/code.wgsl';
 
 // const gltfUrl = '../assets/gltf/Buggy.glb';
 const gltfUrl = '../assets/gltf/di-player-test.glb';
@@ -15,13 +16,10 @@ const ShaderLocations = {
   NORMAL: 1,
   TEXCOORD_0: 2,
 
-  JOINTS_0: 3,
-  WEIGHTS_0: 4,
+  // JOINTS_0: 3,
+  // WEIGHTS_0: 4,
 };
 
-function setupJointNode(gltf, node) {
-
-}
 
 function setupMeshNode(gltf, node, primitiveInstances) {
   const mesh = gltf.meshes[node.mesh];
@@ -144,30 +142,11 @@ export async function init(
     }],
   });
 
-  // TODO: need seprate buffer for animated node transforms (joints)
-  const jointBindGroupLayout = device.createBindGroupLayout({
-    label: `glTF Joint BindGroupLayout`,
-    entries: [{
-      binding: 0, // Node uniforms
-      visibility: GPUShaderStage.VERTEX,
-      buffer: { type: 'read-only-storage' },
-    }],
-  });
-
   const gltfPipelineLayout = device.createPipelineLayout({
     label: 'glTF Pipeline Layout',
     bindGroupLayouts: [
       frameBindGroupLayout,
       instanceBindGroupLayout,
-    ]
-  });
-
-  const gltfSkinnedPipelineLayout = device.createPipelineLayout({
-    label: 'glTF Pipeline Layout',
-    bindGroupLayouts: [
-      frameBindGroupLayout,
-      instanceBindGroupLayout,
-      jointBindGroupLayout,
     ]
   });
 
@@ -178,31 +157,15 @@ export async function init(
     offset: 0, // The offset (in matrices) of the last matrix written into arrayBuffer.
   };
 
-  const skinsSetupInfo = {
-    matrices: new Map(),
-    total: 0, // number of inverseBindMatrices
-  };
-
-  // Setup skin inverseBindMatrices
-  if (gltf.skins) {
-    for (const skin of gltf.skins) {
-      setupSkin(gltf, skin);
-    }
-  }
-
   for (const node of gltf.nodes) {
-    // if 'skin'
     if ('mesh' in node) {
       setupMeshNode(gltf, node, primitiveInstances);
     }
-    // joint node
   }
 
   //////////////////////////////////////
   // Create a buffer large enough to contain all the instance matrices for the entire scene.
   const instanceBuffer = device.createBuffer({
-    // TODO: add space for skin inverseBindMatrices
-    // size: 16 * Float32Array.BYTES_PER_ELEMENT * primitiveInstances.total,
     size: 16 * Float32Array.BYTES_PER_ELEMENT * primitiveInstances.total,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true,
@@ -217,15 +180,8 @@ export async function init(
     }
   }
 
-
-  
-
-
   // Unmap the buffer when we're finished writing all the instance matrices.
   instanceBuffer.unmap();
-
-
-
 
   // Create a bind group for the instance buffer.
   const instanceBindGroup = device.createBindGroup({
@@ -237,30 +193,9 @@ export async function init(
     }],
   });
 
-  // Create a buffer for joint node matrices
-
-
-  // Create a bind group for the joint matrices (animated)
-  const jointBindGroup = device.createBindGroup({
-    label: `glTF Joint BindGroup`,
-    layout: jointBindGroupLayout,
-    entries: [{
-      binding: 0, // Instance storage buffer
-      resource: { buffer: instanceBuffer },
-    }],
-  });
-
   //////////////////////////////////////////////////////
 
 
-  function setupSkin(gltf, skin) {
-    // Setup skin inverseBindMatrices
-
-    const accessor = gltf.accessors[skin.inverseBindMatrices as number];
-    // assert(accessor.type === 'MAT4')
-    const bufferView = gltf.bufferViews[accessor.bufferView];
-    // skinsSetupInfo.total += accessor.
-  }
 
   function setupPrimitive(gltf, primitive, primitiveInstances) {
     const bufferLayout = new Map();

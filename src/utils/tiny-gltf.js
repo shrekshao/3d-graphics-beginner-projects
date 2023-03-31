@@ -303,6 +303,7 @@ export class TinyGltf {
       case 'VEC2': return 2;
       case 'VEC3': return 3;
       case 'VEC4': return 4;
+      case 'MAT4': return 16;
       default: return 0;
     }
   }
@@ -346,6 +347,7 @@ function createGpuBufferFromBufferView(device, bufferView, buffer, usage) {
   // For our purposes we're only worried about bufferViews that have a vertex or index usage.
   if (!usage) { return null; }
 
+  // TODO: optimize for creating buffer on buffer, not buffer view
   const gpuBuffer = device.createBuffer({
     label: bufferView.name,
     // Round the buffer size up to the nearest multiple of 4.
@@ -444,11 +446,19 @@ export class TinyGltfWebGpu extends TinyGltf {
       }
     }
 
+    if (gltf.skins) {
+      for (const skin of gltf.skins) {
+        // TODO: ?inverseBindMatrices is static? how to put it into big model buffer
+        markAccessorUsage(skin.inverseBindMatrices, GPUBufferUsage.STORAGE);
+      }
+    }
+
     // Create WebGPU objects for all necessary buffers, images, and samplers
     gltf.gpuBuffers = [];
     for (const [index, bufferView] of Object.entries(gltf.bufferViews)) {
       gltf.gpuBuffers[index] = createGpuBufferFromBufferView(device, bufferView, gltf.buffers[bufferView.buffer], bufferViewUsages[index]);
     }
+    console.log(gltf.gpuBuffers);
 
     gltf.gpuTextures = [];
     if (gltf.images?.length) {
