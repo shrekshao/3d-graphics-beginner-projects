@@ -9,7 +9,6 @@ import { TinyGltf } from '../src/utils/tiny-gltf';
 import OrbitCamera from '../src/utils/orbitCamera';
 import { mat4 } from 'gl-matrix';
 
-
 // const gltfUrl = '../assets/gltf/Buggy.glb';
 const gltfUrl = '../assets/gltf/di-player-test.glb';
 // const gltfUrl = '../assets/gltf/DamagedHelmet.glb';
@@ -24,9 +23,6 @@ const ShaderLocations = {
   WEIGHTS_0: 4,
 };
 
-
-
-
 // function getPipelineArgs(primitive, buffers) {
 //   return {
 //     topology: TinyGltfWebGpu.gpuPrimitiveTopologyForMode(primitive.mode),
@@ -35,48 +31,41 @@ const ShaderLocations = {
 // }
 // class DrawObject
 
-
-
-
-
-export async function init(
-  context: GPUCanvasContext,
-  device: GPUDevice
-) {
+export async function init(context: GPUCanvasContext, device: GPUDevice) {
   // console.log(device);
   interface StaticMeshDrawObject {
     // setVertexBuffer
     // vertexOffset: number;
     // vertexSize: number;
-  
-    vertexBuffers: {offset: number, size: number}[];
-  
+
+    vertexBuffers: { offset: number; size: number }[];
+
     // setIndexBuffer
     indexOffset: number;
     indexSize: number;
     // drawIndexed
     drawIndexedCount: number;
-  
+
     // now used for transform
     instanceCount: number;
     firstInstance: number;
-  
+
     // TODO: Meterial
-  };
-  
+  }
+
   const staticMeshDrawObjects: Array<StaticMeshDrawObject> = [];
-  
+
   class SkinObject {
     inverseBindMatricesStaticBuffer: GPUBuffer;
     jointMatricesDynamicBuffer: GPUBuffer;
-  
+
     jointMatrices: Float32Array;
 
     bindGroup: GPUBindGroup;
-  
+
     constructor(gltf, skin) {
       const numJoints: number = skin.joints.length;
-  
+
       this.jointMatrices = new Float32Array(16 * numJoints);
       for (const [idx, jointIdx] of skin.joints.entries()) {
         // nodeIdx2SkinIdx[jointIdx] = idx;
@@ -84,20 +73,20 @@ export async function init(
         // update matrix for joint nodes in order
         this.jointMatrices.set(gltf.nodes[jointIdx].worldMatrix, 16 * idx);
       }
-  
-      const bufferSize = 64 * numJoints;  // mat4 * numJoints
-  
+
+      const bufferSize = 64 * numJoints; // mat4 * numJoints
+
       // for skins inverseBindMatrices
       this.inverseBindMatricesStaticBuffer = device.createBuffer({
-        label: "Skin inverseBindMatricesStaticBuffer",
+        label: 'Skin inverseBindMatricesStaticBuffer',
         size: bufferSize,
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         // mappedAtCreation: true,
       });
-  
+
       // for animated object transforms (joints)
       this.jointMatricesDynamicBuffer = device.createBuffer({
-        label: "Skin jointMatricesDynamicBuffer",
+        label: 'Skin jointMatricesDynamicBuffer',
         size: bufferSize,
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         // mappedAtCreation: true,
@@ -111,7 +100,7 @@ export async function init(
           0,
           gltf.buffers[bufferView.buffer],
           bufferView.byteOffset + (accessor.byteOffset ?? 0),
-          bufferView.byteLength,
+          bufferView.byteLength
         );
       }
 
@@ -119,7 +108,7 @@ export async function init(
         device.queue.writeBuffer(
           this.jointMatricesDynamicBuffer,
           0,
-          this.jointMatrices.buffer,
+          this.jointMatrices.buffer
         );
       }
 
@@ -137,20 +126,16 @@ export async function init(
           },
         ],
       });
-      
     }
-  };
-  
+  }
+
   const skinObjects: Array<SkinObject> = [];
-  
+
   interface SkinnedMeshDrawObject extends StaticMeshDrawObject {
-    skinIdx: number;  // in skinObjects
-  };
-  
+    skinIdx: number; // in skinObjects
+  }
+
   const skinnedMeshDrawObjects: Array<SkinnedMeshDrawObject> = [];
-
-
-
 
   const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
   context.configure({
@@ -178,18 +163,28 @@ export async function init(
   // if (url.includes('Sponza')) {
   //   camera.distance = camera.minDistance;
   // } else {
-    camera.distance = sceneAabb.radius * 1.5;
+  camera.distance = sceneAabb.radius * 1.5;
   // }
-  let zFar = sceneAabb.radius * 4.0;
-  
-
+  const zFar = sceneAabb.radius * 4.0;
 
   const FRAME_BUFFER_SIZE = Float32Array.BYTES_PER_ELEMENT * 36;
   const frameArrayBuffer = new ArrayBuffer(FRAME_BUFFER_SIZE);
   const projectionMatrix = new Float32Array(frameArrayBuffer, 0, 16);
-  const viewMatrix = new Float32Array(frameArrayBuffer, 16 * Float32Array.BYTES_PER_ELEMENT, 16);
-  const cameraPosition = new Float32Array(frameArrayBuffer, 32 * Float32Array.BYTES_PER_ELEMENT, 3);
-  const timeArray = new Float32Array(frameArrayBuffer, 35 * Float32Array.BYTES_PER_ELEMENT, 1);
+  const viewMatrix = new Float32Array(
+    frameArrayBuffer,
+    16 * Float32Array.BYTES_PER_ELEMENT,
+    16
+  );
+  const cameraPosition = new Float32Array(
+    frameArrayBuffer,
+    32 * Float32Array.BYTES_PER_ELEMENT,
+    3
+  );
+  const timeArray = new Float32Array(
+    frameArrayBuffer,
+    35 * Float32Array.BYTES_PER_ELEMENT,
+    1
+  );
 
   const frameUniformBuffer = device.createBuffer({
     size: FRAME_BUFFER_SIZE,
@@ -198,22 +193,25 @@ export async function init(
 
   const frameBindGroupLayout = device.createBindGroupLayout({
     label: `Frame BindGroupLayout`,
-    entries: [{
-      binding: 0, // Camera/Frame uniforms
-      visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-      buffer: {},
-    }],
+    entries: [
+      {
+        binding: 0, // Camera/Frame uniforms
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        buffer: {},
+      },
+    ],
   });
 
   const frameBindGroup = device.createBindGroup({
     label: `Frame BindGroup`,
     layout: frameBindGroupLayout,
-    entries: [{
-      binding: 0, // Camera uniforms
-      resource: { buffer: frameUniformBuffer },
-    }],
+    entries: [
+      {
+        binding: 0, // Camera uniforms
+        resource: { buffer: frameUniformBuffer },
+      },
+    ],
   });
-
 
   // setup
 
@@ -224,7 +222,7 @@ export async function init(
   // 2 - Texcoord0
 
   const vertexBuffer = device.createBuffer({
-    size: 4 * 1024 * 1024,  // 4MB
+    size: 4 * 1024 * 1024, // 4MB
     usage: GPUBufferUsage.VERTEX,
     mappedAtCreation: true,
   });
@@ -239,7 +237,7 @@ export async function init(
 
   // for static object transforms
   const staticStorageBuffer = device.createBuffer({
-    size: 4 * 1024 * 1024,  // 4MB
+    size: 4 * 1024 * 1024, // 4MB
     // size: 64,  // mat4
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true,
@@ -253,7 +251,7 @@ export async function init(
         binding: 0,
         visibility: GPUShaderStage.VERTEX,
         buffer: { type: 'read-only-storage' },
-      }
+      },
     ],
   });
 
@@ -276,28 +274,30 @@ export async function init(
     ],
   });
 
-
   function processGltfModel(gltf) {
     type GPUBufferSetup = {
-      curOffset: number,
-      mapped: Uint8Array,
+      curOffset: number;
+      mapped: Uint8Array;
     };
     function getGPUBufferSetup(gpuBuffer: GPUBuffer): GPUBufferSetup {
       return {
         curOffset: 0,
         mapped: new Uint8Array(gpuBuffer.getMappedRange()),
-      }
+      };
     }
-    function uploadToBuffer(gpuBufferSetup: GPUBufferSetup, accessorIndex: number) {
+    function uploadToBuffer(
+      gpuBufferSetup: GPUBufferSetup,
+      accessorIndex: number
+    ) {
       const accessor = gltf.accessors[accessorIndex];
       const bufferView = gltf.bufferViews[accessor.bufferView];
       gpuBufferSetup.mapped.set(
         new Uint8Array(
           gltf.buffers[bufferView.buffer],
           bufferView.byteOffset + (accessor.byteOffset ?? 0),
-          bufferView.byteLength,
+          bufferView.byteLength
         ),
-        gpuBufferSetup.curOffset,
+        gpuBufferSetup.curOffset
       );
 
       // if (bufferView.byteLength === 92712) {
@@ -305,7 +305,6 @@ export async function init(
       // } else {
       //   console.log(new Float32Array(gpuBufferSetup.mapped.buffer));
       // }
-      
 
       const offset = gpuBufferSetup.curOffset;
       gpuBufferSetup.curOffset += bufferView.byteLength;
@@ -313,12 +312,10 @@ export async function init(
       return {
         offset: offset,
         size: bufferView.byteLength,
-      }
+      };
     }
 
-    const nodeIdx2SkinIdx: { [key: number]: number } = {};
-
-    
+    // const nodeIdx2SkinIdx: { [key: number]: number } = {};
 
     if (gltf.skins) {
       // for (const skin of gltf.skins) {
@@ -329,7 +326,6 @@ export async function init(
       }
     }
 
-
     // static transform
     // const staticStorageBufferSetup = getGPUBufferSetup(staticStorageBuffer);
     const staticStorageBufferSetup = {
@@ -339,7 +335,7 @@ export async function init(
     let meshNodeIdx = 0;
 
     for (const node of gltf.nodes) {
-    // for (const [idx, node] of gltf.nodes.entries()) {
+      // for (const [idx, node] of gltf.nodes.entries()) {
       if ('mesh' in node) {
         if ('skin' in node) {
           // gltf.meshes[node.mesh].skinnedMesh = skinObjects[node.skin];
@@ -348,7 +344,7 @@ export async function init(
 
         staticStorageBufferSetup.mapped.set(
           node.worldMatrix,
-          staticStorageBufferSetup.curOffset,
+          staticStorageBufferSetup.curOffset
         );
         staticStorageBufferSetup.curOffset += 16; // mat4:16 float32
 
@@ -359,9 +355,8 @@ export async function init(
 
       // TODO: joints
     }
-    
-    // console.log(new Float32Array(staticStorageBufferSetup.mapped.buffer));
 
+    // console.log(new Float32Array(staticStorageBufferSetup.mapped.buffer));
 
     const vertexBufferSetup = getGPUBufferSetup(vertexBuffer);
     const indexBufferSetup = getGPUBufferSetup(indexBuffer);
@@ -369,7 +364,7 @@ export async function init(
     // const idx2Mesh: { [key: number]: any} = {};
 
     for (const mesh of gltf.meshes) {
-    // for (const [idx, mesh] of gltf.meshes.entries()) {
+      // for (const [idx, mesh] of gltf.meshes.entries()) {
       for (const primitive of mesh.primitives) {
         if (!('indices' in primitive)) {
           console.error('Unsupported: gltf model mesh does not have indices');
@@ -385,13 +380,19 @@ export async function init(
         const drawIndexedCount = gltf.accessors[primitive.indices].count;
 
         if (!('POSITION' in primitive.attributes)) {
-          console.error('Unsupported: gltf model mesh primitive has no POSITION attribute');
+          console.error(
+            'Unsupported: gltf model mesh primitive has no POSITION attribute'
+          );
         }
         if (!('NORMAL' in primitive.attributes)) {
-          console.error('Unsupported: gltf model mesh primitive has no NORMAL attribute');
+          console.error(
+            'Unsupported: gltf model mesh primitive has no NORMAL attribute'
+          );
         }
         if (!('TEXCOORD_0' in primitive.attributes)) {
-          console.error('Unsupported: gltf model mesh primitive has no TEXCOORD_0 attribute');
+          console.error(
+            'Unsupported: gltf model mesh primitive has no TEXCOORD_0 attribute'
+          );
         }
 
         // Assume no arraystride (no interleaved attributes)
@@ -399,8 +400,6 @@ export async function init(
         // const pb = uploadToBuffer(vertexBufferSetup, primitive.attributes.POSITION);
         // const nb = uploadToBuffer(vertexBufferSetup, primitive.attributes.NORMAL);
         // const tb = uploadToBuffer(vertexBufferSetup, primitive.attributes.TEXCOORD_0);
-
-        
 
         if (mesh.skin !== undefined) {
           // const sd = d as SkinnedMeshDrawObject;
@@ -411,15 +410,18 @@ export async function init(
             vertexBuffers: [
               uploadToBuffer(vertexBufferSetup, primitive.attributes.POSITION),
               uploadToBuffer(vertexBufferSetup, primitive.attributes.NORMAL),
-              uploadToBuffer(vertexBufferSetup, primitive.attributes.TEXCOORD_0),
+              uploadToBuffer(
+                vertexBufferSetup,
+                primitive.attributes.TEXCOORD_0
+              ),
               uploadToBuffer(vertexBufferSetup, primitive.attributes.JOINTS_0),
               uploadToBuffer(vertexBufferSetup, primitive.attributes.WEIGHTS_0),
             ],
-  
+
             indexOffset: indexInfo.offset,
             indexSize: indexInfo.size,
             drawIndexedCount: drawIndexedCount,
-  
+
             instanceCount: 1,
             firstInstance: mesh.nodeIdx,
             // firstInstance: 0,
@@ -431,13 +433,16 @@ export async function init(
             vertexBuffers: [
               uploadToBuffer(vertexBufferSetup, primitive.attributes.POSITION),
               uploadToBuffer(vertexBufferSetup, primitive.attributes.NORMAL),
-              uploadToBuffer(vertexBufferSetup, primitive.attributes.TEXCOORD_0),
+              uploadToBuffer(
+                vertexBufferSetup,
+                primitive.attributes.TEXCOORD_0
+              ),
             ],
-  
+
             indexOffset: indexInfo.offset,
             indexSize: indexInfo.size,
             drawIndexedCount: drawIndexedCount,
-  
+
             instanceCount: 1,
             firstInstance: mesh.nodeIdx,
             // firstInstance: 0,
@@ -448,17 +453,10 @@ export async function init(
       }
     }
 
-
     skinnedMeshDrawObjects.sort((a, b) => a.skinIdx - b.skinIdx);
-
-
   }
 
   processGltfModel(gltf);
-
-
-  
-
 
   vertexBuffer.unmap();
   indexBuffer.unmap();
@@ -466,20 +464,17 @@ export async function init(
   // skinStaticStorageBuffer.unmap();
   // dynamicStorageBuffer.unmap();
 
-
-
-
   //////////////
-
-  
 
   const staticStorageBindGroup = device.createBindGroup({
     label: `Static Storage Bind Group`,
     layout: staticStorageBindGroupLayout,
-    entries: [{
-      binding: 0, // Instance storage buffer
-      resource: { buffer: staticStorageBuffer },
-    }],
+    entries: [
+      {
+        binding: 0, // Instance storage buffer
+        resource: { buffer: staticStorageBuffer },
+      },
+    ],
   });
 
   const staticMeshVertexModule = device.createShaderModule({
@@ -495,125 +490,44 @@ export async function init(
   const staticMeshPipeline = device.createRenderPipeline({
     label: 'Static Mesh',
     layout: device.createPipelineLayout({
-        label: 'Static Mesh',
-        bindGroupLayouts: [
-          frameBindGroupLayout,
-          staticStorageBindGroupLayout,
-        ]
-      }),
-      vertex: {
-        module: staticMeshVertexModule,
-        entryPoint: 'vertexMain',
-        buffers: [
-          {
-            arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
-            attributes: [{
-                format: 'float32x3',
-                offset: 0,
-                shaderLocation: 0,
-            }]
-          },
-          {
-            arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
-            attributes: [{
-                format: 'float32x3',
-                offset: 0,
-                shaderLocation: 1,
-            }]
-          },
-          {
-            arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
-            attributes: [{
-                format: 'float32x2',
-                offset: 0,
-                shaderLocation: 2,
-            }]
-          },
-        ]
-      },
-      primitive: {
-        topology: 'triangle-list',
-        cullMode: 'back',
-      },
-      multisample: {
-        // count: this.app.sampleCount,
-        count: 1,
-      },
-      depthStencil: {
-        // format: this.app.depthFormat,
-        format: 'depth24plus',
-        depthWriteEnabled: true,
-        depthCompare: 'less',
-      },
-      fragment: {
-        module: basicFragmentModule,
-        entryPoint: 'fragmentMain',
-        targets: [{
-          // format: this.app.colorFormat,
-          format: presentationFormat
-        }],
-      },
-  });
-
-  const skinnedMeshPipeline = device.createRenderPipeline({
-    label: 'Skinned Mesh',
-    layout: device.createPipelineLayout({
-      label: 'Skinned Mesh',
-      bindGroupLayouts: [
-        frameBindGroupLayout,
-        staticStorageBindGroupLayout,
-        skinBindGroupLayout,
-      ]
+      label: 'Static Mesh',
+      bindGroupLayouts: [frameBindGroupLayout, staticStorageBindGroupLayout],
     }),
     vertex: {
-      module: skinnedMeshVertexModule,
+      module: staticMeshVertexModule,
       entryPoint: 'vertexMain',
       buffers: [
         {
           arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
-          attributes: [{
+          attributes: [
+            {
               format: 'float32x3',
               offset: 0,
               shaderLocation: 0,
-          }]
+            },
+          ],
         },
         {
           arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
-          attributes: [{
+          attributes: [
+            {
               format: 'float32x3',
               offset: 0,
               shaderLocation: 1,
-          }]
+            },
+          ],
         },
         {
           arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
-          attributes: [{
+          attributes: [
+            {
               format: 'float32x2',
               offset: 0,
               shaderLocation: 2,
-          }]
+            },
+          ],
         },
-
-        // joints
-        {
-          arrayStride: 4 * Uint8Array.BYTES_PER_ELEMENT,
-          attributes: [{
-              format: 'uint8x4',
-              offset: 0,
-              shaderLocation: 3,
-          }]
-        },
-
-        // weights
-        {
-          arrayStride: 4 * Float32Array.BYTES_PER_ELEMENT,
-          attributes: [{
-              format: 'float32x4',
-              offset: 0,
-              shaderLocation: 4,
-          }]
-        },
-      ]
+      ],
     },
     primitive: {
       topology: 'triangle-list',
@@ -632,21 +546,114 @@ export async function init(
     fragment: {
       module: basicFragmentModule,
       entryPoint: 'fragmentMain',
-      targets: [{
-        // format: this.app.colorFormat,
-        format: presentationFormat
-      }],
+      targets: [
+        {
+          // format: this.app.colorFormat,
+          format: presentationFormat,
+        },
+      ],
     },
   });
 
+  const skinnedMeshPipeline = device.createRenderPipeline({
+    label: 'Skinned Mesh',
+    layout: device.createPipelineLayout({
+      label: 'Skinned Mesh',
+      bindGroupLayouts: [
+        frameBindGroupLayout,
+        staticStorageBindGroupLayout,
+        skinBindGroupLayout,
+      ],
+    }),
+    vertex: {
+      module: skinnedMeshVertexModule,
+      entryPoint: 'vertexMain',
+      buffers: [
+        {
+          arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'float32x3',
+              offset: 0,
+              shaderLocation: 0,
+            },
+          ],
+        },
+        {
+          arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'float32x3',
+              offset: 0,
+              shaderLocation: 1,
+            },
+          ],
+        },
+        {
+          arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'float32x2',
+              offset: 0,
+              shaderLocation: 2,
+            },
+          ],
+        },
+
+        // joints
+        {
+          arrayStride: 4 * Uint8Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'uint8x4',
+              offset: 0,
+              shaderLocation: 3,
+            },
+          ],
+        },
+
+        // weights
+        {
+          arrayStride: 4 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'float32x4',
+              offset: 0,
+              shaderLocation: 4,
+            },
+          ],
+        },
+      ],
+    },
+    primitive: {
+      topology: 'triangle-list',
+      cullMode: 'back',
+    },
+    multisample: {
+      // count: this.app.sampleCount,
+      count: 1,
+    },
+    depthStencil: {
+      // format: this.app.depthFormat,
+      format: 'depth24plus',
+      depthWriteEnabled: true,
+      depthCompare: 'less',
+    },
+    fragment: {
+      module: basicFragmentModule,
+      entryPoint: 'fragmentMain',
+      targets: [
+        {
+          // format: this.app.colorFormat,
+          format: presentationFormat,
+        },
+      ],
+    },
+  });
 
   // upload gltf models buffer to renderer buffer, and process draw info
 
-
-
-
   function frame() {
-
     const commandEncoder = device.createCommandEncoder();
     const textureView = context.getCurrentTexture().createView();
 
@@ -665,7 +672,7 @@ export async function init(
         depthClearValue: 1.0,
         depthLoadOp: 'clear',
         depthStoreOp: 'store',
-      }
+      },
     };
 
     // camera stuff temp
@@ -678,9 +685,7 @@ export async function init(
 
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
 
-
     passEncoder.setBindGroup(0, frameBindGroup);
-
 
     // Draw static mesh object
     // TODO: sort by material
@@ -694,9 +699,20 @@ export async function init(
         // console.log(idx, vertexBuffer, vb.offset, vb.size);
         passEncoder.setVertexBuffer(idx, vertexBuffer, vb.offset, vb.size);
       }
-      passEncoder.setIndexBuffer(indexBuffer, 'uint16', d.indexOffset, d.indexSize);
+      passEncoder.setIndexBuffer(
+        indexBuffer,
+        'uint16',
+        d.indexOffset,
+        d.indexSize
+      );
 
-      passEncoder.drawIndexed(d.drawIndexedCount, d.instanceCount, 0, 0, d.firstInstance);
+      passEncoder.drawIndexed(
+        d.drawIndexedCount,
+        d.instanceCount,
+        0,
+        0,
+        d.firstInstance
+      );
       // passEncoder.drawIndexed(d.drawIndexedCount);
     }
 
@@ -719,9 +735,20 @@ export async function init(
         const vb = d.vertexBuffers[idx];
         passEncoder.setVertexBuffer(idx, vertexBuffer, vb.offset, vb.size);
       }
-      passEncoder.setIndexBuffer(indexBuffer, 'uint16', d.indexOffset, d.indexSize);
+      passEncoder.setIndexBuffer(
+        indexBuffer,
+        'uint16',
+        d.indexOffset,
+        d.indexSize
+      );
 
-      passEncoder.drawIndexed(d.drawIndexedCount, d.instanceCount, 0, 0, d.firstInstance);
+      passEncoder.drawIndexed(
+        d.drawIndexedCount,
+        d.instanceCount,
+        0,
+        0,
+        d.firstInstance
+      );
     }
 
     passEncoder.end();

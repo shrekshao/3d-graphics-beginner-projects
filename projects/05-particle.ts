@@ -19,9 +19,7 @@ const ShaderLocations = {
   WEIGHTS_0: 4,
 };
 
-function setupJointNode(gltf, node) {
-
-}
+function setupJointNode(gltf, node) {}
 
 function setupMeshNode(gltf, node, primitiveInstances) {
   const mesh = gltf.meshes[node.mesh];
@@ -56,8 +54,6 @@ function setupPrimitiveInstances(primitive, primitiveInstances) {
   return { first, count };
 }
 
-
-
 function getPipelineArgs(primitive, buffers) {
   return {
     topology: TinyGltfWebGpu.gpuPrimitiveTopologyForMode(primitive.mode),
@@ -65,14 +61,7 @@ function getPipelineArgs(primitive, buffers) {
   };
 }
 
-
-
-
-
-export async function init(
-  context: GPUCanvasContext,
-  device: GPUDevice
-) {
+export async function init(context: GPUCanvasContext, device: GPUDevice) {
   // console.log(device);
 
   const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
@@ -95,18 +84,28 @@ export async function init(
   // if (url.includes('Sponza')) {
   //   camera.distance = camera.minDistance;
   // } else {
-    camera.distance = sceneAabb.radius * 1.5;
+  camera.distance = sceneAabb.radius * 1.5;
   // }
-  let zFar = sceneAabb.radius * 4.0;
-  
-
+  const zFar = sceneAabb.radius * 4.0;
 
   const FRAME_BUFFER_SIZE = Float32Array.BYTES_PER_ELEMENT * 36;
   const frameArrayBuffer = new ArrayBuffer(FRAME_BUFFER_SIZE);
   const projectionMatrix = new Float32Array(frameArrayBuffer, 0, 16);
-  const viewMatrix = new Float32Array(frameArrayBuffer, 16 * Float32Array.BYTES_PER_ELEMENT, 16);
-  const cameraPosition = new Float32Array(frameArrayBuffer, 32 * Float32Array.BYTES_PER_ELEMENT, 3);
-  const timeArray = new Float32Array(frameArrayBuffer, 35 * Float32Array.BYTES_PER_ELEMENT, 1);
+  const viewMatrix = new Float32Array(
+    frameArrayBuffer,
+    16 * Float32Array.BYTES_PER_ELEMENT,
+    16
+  );
+  const cameraPosition = new Float32Array(
+    frameArrayBuffer,
+    32 * Float32Array.BYTES_PER_ELEMENT,
+    3
+  );
+  const timeArray = new Float32Array(
+    frameArrayBuffer,
+    35 * Float32Array.BYTES_PER_ELEMENT,
+    1
+  );
 
   const frameUniformBuffer = device.createBuffer({
     size: FRAME_BUFFER_SIZE,
@@ -115,51 +114,54 @@ export async function init(
 
   const frameBindGroupLayout = device.createBindGroupLayout({
     label: `Frame BindGroupLayout`,
-    entries: [{
-      binding: 0, // Camera/Frame uniforms
-      visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-      buffer: {},
-    }],
+    entries: [
+      {
+        binding: 0, // Camera/Frame uniforms
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        buffer: {},
+      },
+    ],
   });
 
   const frameBindGroup = device.createBindGroup({
     label: `Frame BindGroup`,
     layout: frameBindGroupLayout,
-    entries: [{
-      binding: 0, // Camera uniforms
-      resource: { buffer: frameUniformBuffer },
-    }],
+    entries: [
+      {
+        binding: 0, // Camera uniforms
+        resource: { buffer: frameUniformBuffer },
+      },
+    ],
   });
-
-
 
   const pipelineGpuData = new Map();
 
   const instanceBindGroupLayout = device.createBindGroupLayout({
     label: `glTF Instance BindGroupLayout`,
-    entries: [{
-      binding: 0, // Node uniforms
-      visibility: GPUShaderStage.VERTEX,
-      buffer: { type: 'read-only-storage' },
-    }],
+    entries: [
+      {
+        binding: 0, // Node uniforms
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: 'read-only-storage' },
+      },
+    ],
   });
 
   // TODO: need seprate buffer for animated node transforms (joints)
   const jointBindGroupLayout = device.createBindGroupLayout({
     label: `glTF Joint BindGroupLayout`,
-    entries: [{
-      binding: 0, // Node uniforms
-      visibility: GPUShaderStage.VERTEX,
-      buffer: { type: 'read-only-storage' },
-    }],
+    entries: [
+      {
+        binding: 0, // Node uniforms
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: 'read-only-storage' },
+      },
+    ],
   });
 
   const gltfPipelineLayout = device.createPipelineLayout({
     label: 'glTF Pipeline Layout',
-    bindGroupLayouts: [
-      frameBindGroupLayout,
-      instanceBindGroupLayout,
-    ]
+    bindGroupLayouts: [frameBindGroupLayout, instanceBindGroupLayout],
   });
 
   const gltfSkinnedPipelineLayout = device.createPipelineLayout({
@@ -168,7 +170,7 @@ export async function init(
       frameBindGroupLayout,
       instanceBindGroupLayout,
       jointBindGroupLayout,
-    ]
+    ],
   });
 
   const primitiveInstances = {
@@ -209,7 +211,9 @@ export async function init(
   });
 
   // Map the instance matrices buffer so we can write all the matrices into it.
-  primitiveInstances.arrayBuffer = new Float32Array(instanceBuffer.getMappedRange());
+  primitiveInstances.arrayBuffer = new Float32Array(
+    instanceBuffer.getMappedRange()
+  );
 
   for (const mesh of gltf.meshes) {
     for (const primitive of mesh.primitives) {
@@ -217,41 +221,36 @@ export async function init(
     }
   }
 
-
-  
-
-
   // Unmap the buffer when we're finished writing all the instance matrices.
   instanceBuffer.unmap();
-
-
-
 
   // Create a bind group for the instance buffer.
   const instanceBindGroup = device.createBindGroup({
     label: `glTF Instance BindGroup`,
     layout: instanceBindGroupLayout,
-    entries: [{
-      binding: 0, // Instance storage buffer
-      resource: { buffer: instanceBuffer },
-    }],
+    entries: [
+      {
+        binding: 0, // Instance storage buffer
+        resource: { buffer: instanceBuffer },
+      },
+    ],
   });
 
   // Create a buffer for joint node matrices
-
 
   // Create a bind group for the joint matrices (animated)
   const jointBindGroup = device.createBindGroup({
     label: `glTF Joint BindGroup`,
     layout: jointBindGroupLayout,
-    entries: [{
-      binding: 0, // Instance storage buffer
-      resource: { buffer: instanceBuffer },
-    }],
+    entries: [
+      {
+        binding: 0, // Instance storage buffer
+        resource: { buffer: instanceBuffer },
+      },
+    ],
   });
 
   //////////////////////////////////////////////////////
-
 
   function setupSkin(gltf, skin) {
     // Setup skin inverseBindMatrices
@@ -266,45 +265,53 @@ export async function init(
     const bufferLayout = new Map();
     const gpuBuffers = new Map();
     let drawCount = 0;
-  
-    for (const [attribName, accessorIndex] of Object.entries(primitive.attributes)) {
+
+    for (const [attribName, accessorIndex] of Object.entries(
+      primitive.attributes
+    )) {
       const accessor = gltf.accessors[accessorIndex as number];
       const bufferView = gltf.bufferViews[accessor.bufferView];
-  
+
       const shaderLocation = ShaderLocations[attribName];
-      if (shaderLocation === undefined) { continue; }
-  
+      if (shaderLocation === undefined) {
+        continue;
+      }
+
       const offset = accessor.byteOffset;
-  
+
       let buffer = bufferLayout.get(accessor.bufferView);
       let gpuBuffer;
-  
-      let separate = buffer && (Math.abs(offset - buffer.attributes[0].offset) >= buffer.arrayStride);
+
+      const separate =
+        buffer &&
+        Math.abs(offset - buffer.attributes[0].offset) >= buffer.arrayStride;
       if (!buffer || separate) {
         buffer = {
-          arrayStride: bufferView.byteStride || TinyGltfWebGpu.packedArrayStrideForAccessor(accessor),
+          arrayStride:
+            bufferView.byteStride ||
+            TinyGltfWebGpu.packedArrayStrideForAccessor(accessor),
           attributes: [],
         };
-  
+
         bufferLayout.set(separate ? attribName : accessor.bufferView, buffer);
         gpuBuffers.set(buffer, {
           buffer: gltf.gpuBuffers[accessor.bufferView],
-          offset
+          offset,
         });
       } else {
         gpuBuffer = gpuBuffers.get(buffer);
         gpuBuffer.offset = Math.min(gpuBuffer.offset, offset);
       }
-  
+
       buffer.attributes.push({
         shaderLocation,
         format: TinyGltfWebGpu.gpuFormatForAccessor(accessor),
         offset,
       });
-  
+
       drawCount = accessor.count;
     }
-  
+
     // Sort the attributes and buffers
     for (const buffer of bufferLayout.values()) {
       const gpuBuffer = gpuBuffers.get(buffer);
@@ -318,32 +325,34 @@ export async function init(
     const sortedBufferLayout = [...bufferLayout.values()].sort((a, b) => {
       return a.attributes[0].shaderLocation - b.attributes[0].shaderLocation;
     });
-  
+
     // Ensure that the gpuBuffers are saved in the same order as the buffer layout.
     const sortedGpuBuffers = [];
     for (const buffer of sortedBufferLayout) {
       sortedGpuBuffers.push(gpuBuffers.get(buffer));
     }
-  
+
     const gpuPrimitive = {
       buffers: sortedGpuBuffers,
       drawCount,
       instances: setupPrimitiveInstances(primitive, primitiveInstances),
-      
+
       // Temp for typescript, optional stuff with indices
       indexBuffer: null,
       indexOffset: 0,
       indexType: null,
     };
-  
+
     if ('indices' in primitive) {
       const accessor = gltf.accessors[primitive.indices];
       gpuPrimitive.indexBuffer = gltf.gpuBuffers[accessor.bufferView];
       gpuPrimitive.indexOffset = accessor.byteOffset;
-      gpuPrimitive.indexType = TinyGltfWebGpu.gpuIndexFormatForComponentType(accessor.componentType);
+      gpuPrimitive.indexType = TinyGltfWebGpu.gpuIndexFormatForComponentType(
+        accessor.componentType
+      );
       gpuPrimitive.drawCount = accessor.count;
     }
-  
+
     const pipelineArgs = getPipelineArgs(primitive, sortedBufferLayout);
     const pipeline = getPipelineForPrimitive(pipelineArgs);
     pipeline.primitives.push(gpuPrimitive);
@@ -351,16 +360,16 @@ export async function init(
 
   function getPipelineForPrimitive(args) {
     const key = JSON.stringify(args);
-  
+
     let pipeline = pipelineGpuData.get(key);
     if (pipeline) {
       return pipeline;
     }
-  
+
     // const module = getShaderModule();
     const module = device.createShaderModule({
       code: shaderWGSL,
-    })
+    });
     pipeline = device.createRenderPipeline({
       label: 'glTF renderer pipeline',
       layout: gltfPipelineLayout,
@@ -386,20 +395,22 @@ export async function init(
       fragment: {
         module,
         entryPoint: 'fragmentMain',
-        targets: [{
-          // format: this.app.colorFormat,
-          format: presentationFormat
-        }],
+        targets: [
+          {
+            // format: this.app.colorFormat,
+            format: presentationFormat,
+          },
+        ],
       },
     });
-  
+
     const gpuPipeline = {
       pipeline,
-      primitives: [] // Start tracking every primitive that uses this pipeline.
+      primitives: [], // Start tracking every primitive that uses this pipeline.
     };
-  
+
     pipelineGpuData.set(key, gpuPipeline);
-  
+
     return gpuPipeline;
   }
 
@@ -409,15 +420,12 @@ export async function init(
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
-
   function frame() {
     // Sample is no longer the active page.
     // if (!pageState.active) return;
 
     const commandEncoder = device.createCommandEncoder();
     const textureView = context.getCurrentTexture().createView();
-
-    
 
     const renderPassDescriptor: GPURenderPassDescriptor = {
       colorAttachments: [
@@ -434,7 +442,7 @@ export async function init(
         depthClearValue: 1.0,
         depthLoadOp: 'clear',
         depthStoreOp: 'store',
-      }
+      },
     };
 
     // camera stuff temp
@@ -447,7 +455,6 @@ export async function init(
 
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
 
-
     passEncoder.setBindGroup(0, frameBindGroup);
 
     // Set the bind group containing all of the instance transforms.
@@ -457,26 +464,45 @@ export async function init(
       passEncoder.setPipeline(gpuPipeline.pipeline);
 
       for (const gpuPrimitive of gpuPipeline.primitives) {
-        for (const [bufferIndex, gpuBuffer] of Object.entries(gpuPrimitive.buffers)) {
+        for (const [bufferIndex, gpuBuffer] of Object.entries(
+          gpuPrimitive.buffers
+        )) {
           // passEncoder.setVertexBuffer(bufferIndex, gpuBuffer.buffer, gpuBuffer.offset);
-          passEncoder.setVertexBuffer(bufferIndex, gpuBuffer.buffer, gpuBuffer.offset as number);
+          passEncoder.setVertexBuffer(
+            bufferIndex,
+            gpuBuffer.buffer,
+            gpuBuffer.offset as number
+          );
         }
         if (gpuPrimitive.indexBuffer) {
-          passEncoder.setIndexBuffer(gpuPrimitive.indexBuffer, gpuPrimitive.indexType, gpuPrimitive.indexOffset);
+          passEncoder.setIndexBuffer(
+            gpuPrimitive.indexBuffer,
+            gpuPrimitive.indexType,
+            gpuPrimitive.indexOffset
+          );
         }
 
         // Every time we draw, pass an offset (in instances) into the instance buffer as the
         // "firstInstance" argument. This will change the initial instance_index passed to the
         // shader and ensure we pull the right transform matrices from the buffer.
         if (gpuPrimitive.indexBuffer) {
-          passEncoder.drawIndexed(gpuPrimitive.drawCount, gpuPrimitive.instances.count, 0, 0, gpuPrimitive.instances.first);
+          passEncoder.drawIndexed(
+            gpuPrimitive.drawCount,
+            gpuPrimitive.instances.count,
+            0,
+            0,
+            gpuPrimitive.instances.first
+          );
         } else {
-          passEncoder.draw(gpuPrimitive.drawCount, gpuPrimitive.instances.count, 0, gpuPrimitive.instances.first);
+          passEncoder.draw(
+            gpuPrimitive.drawCount,
+            gpuPrimitive.instances.count,
+            0,
+            gpuPrimitive.instances.first
+          );
         }
       }
     }
-
-
 
     passEncoder.end();
 
