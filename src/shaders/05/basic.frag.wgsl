@@ -15,7 +15,6 @@ fn fragmentMain(input : FragmentInput) -> @location(0) vec4<f32> {
   let N = normalize(input.normal);
   let L = normalize(lightDir);
   let NDotL = max(dot(N, L), 0.0);
-  // let surfaceColor = ambientColor + NDotL * vec3(input.texcoord.xy, 0.0);
   // let surfaceColor = ambientColor + NDotL;
   let surfaceColor = vec3(input.texcoord.xy, 0.0);
 

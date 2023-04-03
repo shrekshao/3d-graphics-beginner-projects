@@ -1,6 +1,7 @@
 // import triangleVertWGSL from '../src/shaders/triangle.vert.wgsl';
 // import fragWGSL from '../src/shaders/red.frag.wgsl';
 import staticMeshVertexWGSL from '../src/shaders/05/static-mesh.vert.wgsl';
+import skinnedMeshVertexWGSL from '../src/shaders/05/skinned.vert.wgsl';
 import basicFragmentWGSL from '../src/shaders/05/basic.frag.wgsl';
 
 // import { TinyGltfWebGpu } from '../src/utils/tiny-gltf';
@@ -34,33 +35,7 @@ const ShaderLocations = {
 // }
 // class DrawObject
 
-class StaticMeshDrawObject {
-  // setVertexBuffer
-  // vertexOffset: number;
-  // vertexSize: number;
 
-  vertexBuffers: {offset: number, size: number}[];
-
-  // setIndexBuffer
-  indexOffset: number;
-  indexSize: number;
-  // drawIndexed
-  drawIndexedCount: number;
-
-  // now used for transform
-  instanceCount: number = 1;
-  firstInstance: number = 0;
-
-  // Meterial
-};
-
-const staticMeshDrawObjects: Array<StaticMeshDrawObject> = [];
-
-class SkinnedMeshDrawObject extends StaticMeshDrawObject {
-
-};
-
-const skinnedMeshDrawObjects: Array<SkinnedMeshDrawObject> = [];
 
 
 
@@ -69,6 +44,113 @@ export async function init(
   device: GPUDevice
 ) {
   // console.log(device);
+  interface StaticMeshDrawObject {
+    // setVertexBuffer
+    // vertexOffset: number;
+    // vertexSize: number;
+  
+    vertexBuffers: {offset: number, size: number}[];
+  
+    // setIndexBuffer
+    indexOffset: number;
+    indexSize: number;
+    // drawIndexed
+    drawIndexedCount: number;
+  
+    // now used for transform
+    instanceCount: number;
+    firstInstance: number;
+  
+    // TODO: Meterial
+  };
+  
+  const staticMeshDrawObjects: Array<StaticMeshDrawObject> = [];
+  
+  class SkinObject {
+    inverseBindMatricesStaticBuffer: GPUBuffer;
+    jointMatricesDynamicBuffer: GPUBuffer;
+  
+    jointMatrices: Float32Array;
+
+    bindGroup: GPUBindGroup;
+  
+    constructor(gltf, skin) {
+      const numJoints: number = skin.joints.length;
+  
+      this.jointMatrices = new Float32Array(16 * numJoints);
+      for (const [idx, jointIdx] of skin.joints.entries()) {
+        // nodeIdx2SkinIdx[jointIdx] = idx;
+
+        // update matrix for joint nodes in order
+        this.jointMatrices.set(gltf.nodes[jointIdx].worldMatrix, 16 * idx);
+      }
+  
+      const bufferSize = 64 * numJoints;  // mat4 * numJoints
+  
+      // for skins inverseBindMatrices
+      this.inverseBindMatricesStaticBuffer = device.createBuffer({
+        label: "Skin inverseBindMatricesStaticBuffer",
+        size: bufferSize,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        // mappedAtCreation: true,
+      });
+  
+      // for animated object transforms (joints)
+      this.jointMatricesDynamicBuffer = device.createBuffer({
+        label: "Skin jointMatricesDynamicBuffer",
+        size: bufferSize,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        // mappedAtCreation: true,
+      });
+
+      {
+        const accessor = gltf.accessors[skin.inverseBindMatrices];
+        const bufferView = gltf.bufferViews[accessor.bufferView];
+        device.queue.writeBuffer(
+          this.inverseBindMatricesStaticBuffer,
+          0,
+          gltf.buffers[bufferView.buffer],
+          bufferView.byteOffset + (accessor.byteOffset ?? 0),
+          bufferView.byteLength,
+        );
+      }
+
+      {
+        device.queue.writeBuffer(
+          this.jointMatricesDynamicBuffer,
+          0,
+          this.jointMatrices.buffer,
+        );
+      }
+
+      this.bindGroup = device.createBindGroup({
+        label: `Static Storage Bind Group`,
+        layout: skinBindGroupLayout,
+        entries: [
+          {
+            binding: 0,
+            resource: { buffer: this.inverseBindMatricesStaticBuffer },
+          },
+          {
+            binding: 1,
+            resource: { buffer: this.jointMatricesDynamicBuffer },
+          },
+        ],
+      });
+      
+    }
+  };
+  
+  const skinObjects: Array<SkinObject> = [];
+  
+  interface SkinnedMeshDrawObject extends StaticMeshDrawObject {
+    skinIdx: number;  // in skinObjects
+  };
+  
+  const skinnedMeshDrawObjects: Array<SkinnedMeshDrawObject> = [];
+
+
+
 
   const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
   context.configure({
@@ -155,7 +237,7 @@ export async function init(
     mappedAtCreation: true,
   });
 
-  // for static object transforms + inverseBindMatrices
+  // for static object transforms
   const staticStorageBuffer = device.createBuffer({
     size: 4 * 1024 * 1024,  // 4MB
     // size: 64,  // mat4
@@ -163,11 +245,35 @@ export async function init(
     mappedAtCreation: true,
   });
 
-  // for animated object transforms (joints)
-  const dynamicStorageBuffer = device.createBuffer({
-    size: 1024,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    mappedAtCreation: true,
+  const staticStorageBindGroupLayout = device.createBindGroupLayout({
+    label: `Static Storage Bind Group`,
+    entries: [
+      // Static transform mat buffer
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: 'read-only-storage' },
+      }
+    ],
+  });
+
+  // static inverse bind matrices buffer + dynamic joint matrices buffer
+  const skinBindGroupLayout = device.createBindGroupLayout({
+    label: `Skin Storage Bind Group`,
+    entries: [
+      // Static transform Mat4 buffer for inverse bind matrices
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: 'read-only-storage' },
+      },
+      // Dynamic transform Mat4 buffer for joint matrices
+      {
+        binding: 1,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: 'read-only-storage' },
+      },
+    ],
   });
 
 
@@ -210,6 +316,19 @@ export async function init(
       }
     }
 
+    const nodeIdx2SkinIdx: { [key: number]: number } = {};
+
+    
+
+    if (gltf.skins) {
+      // for (const skin of gltf.skins) {
+      for (const [idx, skin] of gltf.skins.entries()) {
+        // uploadToBuffer();
+        skinObjects.push(new SkinObject(gltf, skin));
+        console.log(skinObjects[skinObjects.length - 1]);
+      }
+    }
+
 
     // static transform
     // const staticStorageBufferSetup = getGPUBufferSetup(staticStorageBuffer);
@@ -222,6 +341,11 @@ export async function init(
     for (const node of gltf.nodes) {
     // for (const [idx, node] of gltf.nodes.entries()) {
       if ('mesh' in node) {
+        if ('skin' in node) {
+          // gltf.meshes[node.mesh].skinnedMesh = skinObjects[node.skin];
+          gltf.meshes[node.mesh].skin = node.skin;
+        }
+
         staticStorageBufferSetup.mapped.set(
           node.worldMatrix,
           staticStorageBufferSetup.curOffset,
@@ -244,10 +368,8 @@ export async function init(
 
     // const idx2Mesh: { [key: number]: any} = {};
 
-    // for (const mesh of gltf.meshes) {
-    for (const [idx, mesh] of gltf.meshes.entries()) {
-      const skinnedMesh: boolean = !!(mesh.skin);
-
+    for (const mesh of gltf.meshes) {
+    // for (const [idx, mesh] of gltf.meshes.entries()) {
       for (const primitive of mesh.primitives) {
         if (!('indices' in primitive)) {
           console.error('Unsupported: gltf model mesh does not have indices');
@@ -278,36 +400,56 @@ export async function init(
         // const nb = uploadToBuffer(vertexBufferSetup, primitive.attributes.NORMAL);
         // const tb = uploadToBuffer(vertexBufferSetup, primitive.attributes.TEXCOORD_0);
 
+        
 
-        if (skinnedMesh) {
-          // TODO:
+        if (mesh.skin !== undefined) {
+          // const sd = d as SkinnedMeshDrawObject;
+          // sd.skinIdx = mesh.skin;
+          // const sd: SkinnedMeshDrawObject = { ...d, skinIdx: mesh.skin };
+          const sd: SkinnedMeshDrawObject = {
+            skinIdx: mesh.skin,
+            vertexBuffers: [
+              uploadToBuffer(vertexBufferSetup, primitive.attributes.POSITION),
+              uploadToBuffer(vertexBufferSetup, primitive.attributes.NORMAL),
+              uploadToBuffer(vertexBufferSetup, primitive.attributes.TEXCOORD_0),
+              uploadToBuffer(vertexBufferSetup, primitive.attributes.JOINTS_0),
+              uploadToBuffer(vertexBufferSetup, primitive.attributes.WEIGHTS_0),
+            ],
+  
+            indexOffset: indexInfo.offset,
+            indexSize: indexInfo.size,
+            drawIndexedCount: drawIndexedCount,
+  
+            instanceCount: 1,
+            firstInstance: mesh.nodeIdx,
+            // firstInstance: 0,
+          };
+          skinnedMeshDrawObjects.push(sd);
+          console.log(sd);
         } else {
           const d: StaticMeshDrawObject = {
-            // vertexOffset: vertexOffset,
-            // vertexSize: vertexBufferSetup.curOffset - vertexOffset,
-
             vertexBuffers: [
               uploadToBuffer(vertexBufferSetup, primitive.attributes.POSITION),
               uploadToBuffer(vertexBufferSetup, primitive.attributes.NORMAL),
               uploadToBuffer(vertexBufferSetup, primitive.attributes.TEXCOORD_0),
             ],
-
+  
             indexOffset: indexInfo.offset,
             indexSize: indexInfo.size,
             drawIndexedCount: drawIndexedCount,
-
+  
             instanceCount: 1,
             firstInstance: mesh.nodeIdx,
             // firstInstance: 0,
           };
           staticMeshDrawObjects.push(d);
-          console.log(d);
+          // console.log(d);
         }
       }
     }
 
 
-
+    skinnedMeshDrawObjects.sort((a, b) => a.skinIdx - b.skinIdx);
 
 
   }
@@ -321,23 +463,15 @@ export async function init(
   vertexBuffer.unmap();
   indexBuffer.unmap();
   staticStorageBuffer.unmap();
-  dynamicStorageBuffer.unmap();
+  // skinStaticStorageBuffer.unmap();
+  // dynamicStorageBuffer.unmap();
 
 
 
 
   //////////////
-  const staticStorageBindGroupLayout = device.createBindGroupLayout({
-    label: `Static Storage Bind Group`,
-    entries: [
-      // Static transform mat buffer
-      {
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX,
-        buffer: { type: 'read-only-storage' },
-      }
-    ],
-  });
+
+  
 
   const staticStorageBindGroup = device.createBindGroup({
     label: `Static Storage Bind Group`,
@@ -348,24 +482,25 @@ export async function init(
     }],
   });
 
-  const staticMeshDrawObjectPipelineLayout = device.createPipelineLayout({
-    label: 'Static Mesh Draw Object',
-    bindGroupLayouts: [
-      frameBindGroupLayout,
-      staticStorageBindGroupLayout,
-    ]
-  });
-
   const staticMeshVertexModule = device.createShaderModule({
     code: staticMeshVertexWGSL,
+  });
+  const skinnedMeshVertexModule = device.createShaderModule({
+    code: skinnedMeshVertexWGSL,
   });
   const basicFragmentModule = device.createShaderModule({
     code: basicFragmentWGSL,
   });
 
-  const staticMeshDrawObjectPipeline = device.createRenderPipeline({
-    label: 'Static Mesh Draw Object',
-    layout: staticMeshDrawObjectPipelineLayout,
+  const staticMeshPipeline = device.createRenderPipeline({
+    label: 'Static Mesh',
+    layout: device.createPipelineLayout({
+        label: 'Static Mesh',
+        bindGroupLayouts: [
+          frameBindGroupLayout,
+          staticStorageBindGroupLayout,
+        ]
+      }),
       vertex: {
         module: staticMeshVertexModule,
         entryPoint: 'vertexMain',
@@ -420,6 +555,90 @@ export async function init(
       },
   });
 
+  const skinnedMeshPipeline = device.createRenderPipeline({
+    label: 'Skinned Mesh',
+    layout: device.createPipelineLayout({
+      label: 'Skinned Mesh',
+      bindGroupLayouts: [
+        frameBindGroupLayout,
+        staticStorageBindGroupLayout,
+        skinBindGroupLayout,
+      ]
+    }),
+    vertex: {
+      module: skinnedMeshVertexModule,
+      entryPoint: 'vertexMain',
+      buffers: [
+        {
+          arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [{
+              format: 'float32x3',
+              offset: 0,
+              shaderLocation: 0,
+          }]
+        },
+        {
+          arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [{
+              format: 'float32x3',
+              offset: 0,
+              shaderLocation: 1,
+          }]
+        },
+        {
+          arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [{
+              format: 'float32x2',
+              offset: 0,
+              shaderLocation: 2,
+          }]
+        },
+
+        // joints
+        {
+          arrayStride: 4 * Uint8Array.BYTES_PER_ELEMENT,
+          attributes: [{
+              format: 'uint8x4',
+              offset: 0,
+              shaderLocation: 3,
+          }]
+        },
+
+        // weights
+        {
+          arrayStride: 4 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [{
+              format: 'float32x4',
+              offset: 0,
+              shaderLocation: 4,
+          }]
+        },
+      ]
+    },
+    primitive: {
+      topology: 'triangle-list',
+      cullMode: 'back',
+    },
+    multisample: {
+      // count: this.app.sampleCount,
+      count: 1,
+    },
+    depthStencil: {
+      // format: this.app.depthFormat,
+      format: 'depth24plus',
+      depthWriteEnabled: true,
+      depthCompare: 'less',
+    },
+    fragment: {
+      module: basicFragmentModule,
+      entryPoint: 'fragmentMain',
+      targets: [{
+        // format: this.app.colorFormat,
+        format: presentationFormat
+      }],
+    },
+  });
+
 
   // upload gltf models buffer to renderer buffer, and process draw info
 
@@ -467,22 +686,43 @@ export async function init(
     // TODO: sort by material
     passEncoder.setBindGroup(1, staticStorageBindGroup);
 
-    passEncoder.setPipeline(staticMeshDrawObjectPipeline);
+    passEncoder.setPipeline(staticMeshPipeline);
     for (const d of staticMeshDrawObjects) {
-      // passEncoder.setVertexBuffer(0, vertexBuffer, d.vertexOffset, d.vertexSize);
-      for (const [idx, vb] of d.vertexBuffers.entries()) {
+      // for (const [idx, vb] of d.vertexBuffers.entries()) {
+      for (let idx = 0; idx < d.vertexBuffers.length; idx++) {
+        const vb = d.vertexBuffers[idx];
         // console.log(idx, vertexBuffer, vb.offset, vb.size);
         passEncoder.setVertexBuffer(idx, vertexBuffer, vb.offset, vb.size);
-        // passEncoder.setVertexBuffer(idx, vertexBuffer, 0, 0);
       }
-
       passEncoder.setIndexBuffer(indexBuffer, 'uint16', d.indexOffset, d.indexSize);
 
       passEncoder.drawIndexed(d.drawIndexedCount, d.instanceCount, 0, 0, d.firstInstance);
       // passEncoder.drawIndexed(d.drawIndexedCount);
     }
 
+    // Draw skinned mesh
+    passEncoder.setPipeline(skinnedMeshPipeline);
+    // for (let skinIdx = 0; skinIdx < skinObjects.length; skinIdx++) {
+    // }
 
+    let skinIdx = -1;
+    let skin: SkinObject;
+
+    for (const d of skinnedMeshDrawObjects) {
+      if (d.skinIdx !== skinIdx) {
+        skinIdx = d.skinIdx;
+        skin = skinObjects[skinIdx];
+        passEncoder.setBindGroup(2, skin.bindGroup);
+      }
+
+      for (let idx = 0; idx < d.vertexBuffers.length; idx++) {
+        const vb = d.vertexBuffers[idx];
+        passEncoder.setVertexBuffer(idx, vertexBuffer, vb.offset, vb.size);
+      }
+      passEncoder.setIndexBuffer(indexBuffer, 'uint16', d.indexOffset, d.indexSize);
+
+      passEncoder.drawIndexed(d.drawIndexedCount, d.instanceCount, 0, 0, d.firstInstance);
+    }
 
     passEncoder.end();
 
