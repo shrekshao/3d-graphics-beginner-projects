@@ -8,7 +8,8 @@ import { mat4 } from 'gl-matrix';
 import shaderWGSL from '../src/shaders/05/code.wgsl';
 
 // const gltfUrl = '../assets/gltf/Buggy.glb';
-const gltfUrl = '../assets/gltf/di-player-test.glb';
+// const gltfUrl = '../assets/gltf/di-player-test.glb';
+const gltfUrl = '../assets/gltf/DamagedHelmet.glb';
 
 // Shader locations and source are unchanged from the previous sample.
 const ShaderLocations = {
@@ -180,6 +181,8 @@ export async function init(
     }
   }
 
+  // console.log(primitiveInstances.arrayBuffer);
+
   // Unmap the buffer when we're finished writing all the instance matrices.
   instanceBuffer.unmap();
 
@@ -253,6 +256,8 @@ export async function init(
     const sortedBufferLayout = [...bufferLayout.values()].sort((a, b) => {
       return a.attributes[0].shaderLocation - b.attributes[0].shaderLocation;
     });
+
+    console.log(sortedBufferLayout);
   
     // Ensure that the gpuBuffers are saved in the same order as the buffer layout.
     const sortedGpuBuffers = [];
@@ -282,6 +287,8 @@ export async function init(
     const pipelineArgs = getPipelineArgs(primitive, sortedBufferLayout);
     const pipeline = getPipelineForPrimitive(pipelineArgs);
     pipeline.primitives.push(gpuPrimitive);
+
+    // console.log(primitiveInstances);
   }
 
   function getPipelineForPrimitive(args) {
@@ -394,6 +401,7 @@ export async function init(
       for (const gpuPrimitive of gpuPipeline.primitives) {
         for (const [bufferIndex, gpuBuffer] of Object.entries(gpuPrimitive.buffers)) {
           // passEncoder.setVertexBuffer(bufferIndex, gpuBuffer.buffer, gpuBuffer.offset);
+          // console.log(bufferIndex, gpuBuffer.buffer, gpuBuffer.offset);
           passEncoder.setVertexBuffer(bufferIndex, gpuBuffer.buffer, gpuBuffer.offset as number);
         }
         if (gpuPrimitive.indexBuffer) {
@@ -404,6 +412,7 @@ export async function init(
         // "firstInstance" argument. This will change the initial instance_index passed to the
         // shader and ensure we pull the right transform matrices from the buffer.
         if (gpuPrimitive.indexBuffer) {
+          // console.log(gpuPrimitive.drawCount, gpuPrimitive.instances.count, 0, 0, gpuPrimitive.instances.first);
           passEncoder.drawIndexed(gpuPrimitive.drawCount, gpuPrimitive.instances.count, 0, 0, gpuPrimitive.instances.first);
         } else {
           passEncoder.draw(gpuPrimitive.drawCount, gpuPrimitive.instances.count, 0, gpuPrimitive.instances.first);

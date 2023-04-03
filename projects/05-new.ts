@@ -1,14 +1,17 @@
 // import triangleVertWGSL from '../src/shaders/triangle.vert.wgsl';
 // import fragWGSL from '../src/shaders/red.frag.wgsl';
-import shaderWGSL from '../src/shaders/05/code.wgsl';
+import staticMeshVertexWGSL from '../src/shaders/05/static-mesh.vert.wgsl';
+import basicFragmentWGSL from '../src/shaders/05/basic.frag.wgsl';
 
 // import { TinyGltfWebGpu } from '../src/utils/tiny-gltf';
 import { TinyGltf } from '../src/utils/tiny-gltf';
 import OrbitCamera from '../src/utils/orbitCamera';
 import { mat4 } from 'gl-matrix';
 
+
 // const gltfUrl = '../assets/gltf/Buggy.glb';
 const gltfUrl = '../assets/gltf/di-player-test.glb';
+// const gltfUrl = '../assets/gltf/DamagedHelmet.glb';
 
 // Shader locations and source are unchanged from the previous sample.
 const ShaderLocations = {
@@ -29,25 +32,35 @@ const ShaderLocations = {
 //     buffers,
 //   };
 // }
+// class DrawObject
 
 class StaticMeshDrawObject {
   // setVertexBuffer
-  vertexOffset: number;
-  vertexSize: number;
+  // vertexOffset: number;
+  // vertexSize: number;
+
+  vertexBuffers: {offset: number, size: number}[];
+
   // setIndexBuffer
   indexOffset: number;
   indexSize: number;
   // drawIndexed
-  drawCount: number;
-  instanceCount: number;
-  firstInstance: number;
+  drawIndexedCount: number;
+
+  // now used for transform
+  instanceCount: number = 1;
+  firstInstance: number = 0;
 
   // Meterial
 };
 
+const staticMeshDrawObjects: Array<StaticMeshDrawObject> = [];
+
 class SkinnedMeshDrawObject extends StaticMeshDrawObject {
 
 };
+
+const skinnedMeshDrawObjects: Array<SkinnedMeshDrawObject> = [];
 
 
 
@@ -127,26 +140,284 @@ export async function init(
   // 0 - Position float32x3
   // 1 - Normal
   // 2 - Texcoord0
+
   const vertexBuffer = device.createBuffer({
-    size: 1024,
+    size: 4 * 1024 * 1024,  // 4MB
     usage: GPUBufferUsage.VERTEX,
+    mappedAtCreation: true,
   });
 
   const indexBuffer = device.createBuffer({
-    size: 1024,
+    // size: 4 * 1024 * 1024,  // 4MB
+    // size: 34062,
+    size: 34064,
     usage: GPUBufferUsage.INDEX,
+    mappedAtCreation: true,
   });
 
   // for static object transforms + inverseBindMatrices
   const staticStorageBuffer = device.createBuffer({
-    size: 1024,
+    size: 4 * 1024 * 1024,  // 4MB
+    // size: 64,  // mat4
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    mappedAtCreation: true,
   });
 
   // for animated object transforms (joints)
   const dynamicStorageBuffer = device.createBuffer({
     size: 1024,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    mappedAtCreation: true,
+  });
+
+
+  function processGltfModel(gltf) {
+    type GPUBufferSetup = {
+      curOffset: number,
+      mapped: Uint8Array,
+    };
+    function getGPUBufferSetup(gpuBuffer: GPUBuffer): GPUBufferSetup {
+      return {
+        curOffset: 0,
+        mapped: new Uint8Array(gpuBuffer.getMappedRange()),
+      }
+    }
+    function uploadToBuffer(gpuBufferSetup: GPUBufferSetup, accessorIndex: number) {
+      const accessor = gltf.accessors[accessorIndex];
+      const bufferView = gltf.bufferViews[accessor.bufferView];
+      gpuBufferSetup.mapped.set(
+        new Uint8Array(
+          gltf.buffers[bufferView.buffer],
+          bufferView.byteOffset + (accessor.byteOffset ?? 0),
+          bufferView.byteLength,
+        ),
+        gpuBufferSetup.curOffset,
+      );
+
+      // if (bufferView.byteLength === 92712) {
+      //   console.log(gpuBufferSetup.mapped);
+      // } else {
+      //   console.log(new Float32Array(gpuBufferSetup.mapped.buffer));
+      // }
+      
+
+      const offset = gpuBufferSetup.curOffset;
+      gpuBufferSetup.curOffset += bufferView.byteLength;
+      // console.log(gpuBufferSetup.curOffset);
+      return {
+        offset: offset,
+        size: bufferView.byteLength,
+      }
+    }
+
+
+    // static transform
+    // const staticStorageBufferSetup = getGPUBufferSetup(staticStorageBuffer);
+    const staticStorageBufferSetup = {
+      curOffset: 0,
+      mapped: new Float32Array(staticStorageBuffer.getMappedRange()),
+    };
+    let meshNodeIdx = 0;
+
+    for (const node of gltf.nodes) {
+    // for (const [idx, node] of gltf.nodes.entries()) {
+      if ('mesh' in node) {
+        staticStorageBufferSetup.mapped.set(
+          node.worldMatrix,
+          staticStorageBufferSetup.curOffset,
+        );
+        staticStorageBufferSetup.curOffset += 16; // mat4:16 float32
+
+        // console.log(node.worldMatrix);
+
+        gltf.meshes[node.mesh].nodeIdx = meshNodeIdx++;
+      }
+
+      // TODO: joints
+    }
+    
+    // console.log(new Float32Array(staticStorageBufferSetup.mapped.buffer));
+
+
+    const vertexBufferSetup = getGPUBufferSetup(vertexBuffer);
+    const indexBufferSetup = getGPUBufferSetup(indexBuffer);
+
+    // const idx2Mesh: { [key: number]: any} = {};
+
+    // for (const mesh of gltf.meshes) {
+    for (const [idx, mesh] of gltf.meshes.entries()) {
+      const skinnedMesh: boolean = !!(mesh.skin);
+
+      for (const primitive of mesh.primitives) {
+        if (!('indices' in primitive)) {
+          console.error('Unsupported: gltf model mesh does not have indices');
+        }
+
+        const a = gltf.accessors[primitive.indices];
+        const GL = WebGLRenderingContext;
+        if (a.type !== 'SCALAR' || a.componentType !== GL.UNSIGNED_SHORT) {
+          console.error('Unsupported index type: ', a);
+        }
+
+        const indexInfo = uploadToBuffer(indexBufferSetup, primitive.indices);
+        const drawIndexedCount = gltf.accessors[primitive.indices].count;
+
+        if (!('POSITION' in primitive.attributes)) {
+          console.error('Unsupported: gltf model mesh primitive has no POSITION attribute');
+        }
+        if (!('NORMAL' in primitive.attributes)) {
+          console.error('Unsupported: gltf model mesh primitive has no NORMAL attribute');
+        }
+        if (!('TEXCOORD_0' in primitive.attributes)) {
+          console.error('Unsupported: gltf model mesh primitive has no TEXCOORD_0 attribute');
+        }
+
+        // Assume no arraystride (no interleaved attributes)
+        // const vertexOffset = vertexBufferSetup.curOffset;
+        // const pb = uploadToBuffer(vertexBufferSetup, primitive.attributes.POSITION);
+        // const nb = uploadToBuffer(vertexBufferSetup, primitive.attributes.NORMAL);
+        // const tb = uploadToBuffer(vertexBufferSetup, primitive.attributes.TEXCOORD_0);
+
+
+        if (skinnedMesh) {
+          // TODO:
+        } else {
+          const d: StaticMeshDrawObject = {
+            // vertexOffset: vertexOffset,
+            // vertexSize: vertexBufferSetup.curOffset - vertexOffset,
+
+            vertexBuffers: [
+              uploadToBuffer(vertexBufferSetup, primitive.attributes.POSITION),
+              uploadToBuffer(vertexBufferSetup, primitive.attributes.NORMAL),
+              uploadToBuffer(vertexBufferSetup, primitive.attributes.TEXCOORD_0),
+            ],
+
+            indexOffset: indexInfo.offset,
+            indexSize: indexInfo.size,
+            drawIndexedCount: drawIndexedCount,
+
+            instanceCount: 1,
+            firstInstance: mesh.nodeIdx,
+            // firstInstance: 0,
+          };
+          staticMeshDrawObjects.push(d);
+          console.log(d);
+        }
+      }
+    }
+
+
+
+
+
+  }
+
+  processGltfModel(gltf);
+
+
+  
+
+
+  vertexBuffer.unmap();
+  indexBuffer.unmap();
+  staticStorageBuffer.unmap();
+  dynamicStorageBuffer.unmap();
+
+
+
+
+  //////////////
+  const staticStorageBindGroupLayout = device.createBindGroupLayout({
+    label: `Static Storage Bind Group`,
+    entries: [
+      // Static transform mat buffer
+      {
+        binding: 0,
+        visibility: GPUShaderStage.VERTEX,
+        buffer: { type: 'read-only-storage' },
+      }
+    ],
+  });
+
+  const staticStorageBindGroup = device.createBindGroup({
+    label: `Static Storage Bind Group`,
+    layout: staticStorageBindGroupLayout,
+    entries: [{
+      binding: 0, // Instance storage buffer
+      resource: { buffer: staticStorageBuffer },
+    }],
+  });
+
+  const staticMeshDrawObjectPipelineLayout = device.createPipelineLayout({
+    label: 'Static Mesh Draw Object',
+    bindGroupLayouts: [
+      frameBindGroupLayout,
+      staticStorageBindGroupLayout,
+    ]
+  });
+
+  const staticMeshVertexModule = device.createShaderModule({
+    code: staticMeshVertexWGSL,
+  });
+  const basicFragmentModule = device.createShaderModule({
+    code: basicFragmentWGSL,
+  });
+
+  const staticMeshDrawObjectPipeline = device.createRenderPipeline({
+    label: 'Static Mesh Draw Object',
+    layout: staticMeshDrawObjectPipelineLayout,
+      vertex: {
+        module: staticMeshVertexModule,
+        entryPoint: 'vertexMain',
+        buffers: [
+          {
+            arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+            attributes: [{
+                format: 'float32x3',
+                offset: 0,
+                shaderLocation: 0,
+            }]
+          },
+          {
+            arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+            attributes: [{
+                format: 'float32x3',
+                offset: 0,
+                shaderLocation: 1,
+            }]
+          },
+          {
+            arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
+            attributes: [{
+                format: 'float32x2',
+                offset: 0,
+                shaderLocation: 2,
+            }]
+          },
+        ]
+      },
+      primitive: {
+        topology: 'triangle-list',
+        cullMode: 'back',
+      },
+      multisample: {
+        // count: this.app.sampleCount,
+        count: 1,
+      },
+      depthStencil: {
+        // format: this.app.depthFormat,
+        format: 'depth24plus',
+        depthWriteEnabled: true,
+        depthCompare: 'less',
+      },
+      fragment: {
+        module: basicFragmentModule,
+        entryPoint: 'fragmentMain',
+        targets: [{
+          // format: this.app.colorFormat,
+          format: presentationFormat
+        }],
+      },
   });
 
 
@@ -192,6 +463,24 @@ export async function init(
     passEncoder.setBindGroup(0, frameBindGroup);
 
 
+    // Draw static mesh object
+    // TODO: sort by material
+    passEncoder.setBindGroup(1, staticStorageBindGroup);
+
+    passEncoder.setPipeline(staticMeshDrawObjectPipeline);
+    for (const d of staticMeshDrawObjects) {
+      // passEncoder.setVertexBuffer(0, vertexBuffer, d.vertexOffset, d.vertexSize);
+      for (const [idx, vb] of d.vertexBuffers.entries()) {
+        // console.log(idx, vertexBuffer, vb.offset, vb.size);
+        passEncoder.setVertexBuffer(idx, vertexBuffer, vb.offset, vb.size);
+        // passEncoder.setVertexBuffer(idx, vertexBuffer, 0, 0);
+      }
+
+      passEncoder.setIndexBuffer(indexBuffer, 'uint16', d.indexOffset, d.indexSize);
+
+      passEncoder.drawIndexed(d.drawIndexedCount, d.instanceCount, 0, 0, d.firstInstance);
+      // passEncoder.drawIndexed(d.drawIndexedCount);
+    }
 
 
 

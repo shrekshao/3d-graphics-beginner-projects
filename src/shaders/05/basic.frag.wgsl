@@ -20,4 +20,5 @@ fn fragmentMain(input : FragmentInput) -> @location(0) vec4<f32> {
   let surfaceColor = vec3(input.texcoord.xy, 0.0);
 
   return vec4(surfaceColor, 1.0);
+  // return vec4(1.0, 1.0, 1.0, 1.0);
 }

@@ -358,6 +358,12 @@ function createGpuBufferFromBufferView(device, bufferView, buffer, usage) {
 
   const gpuBufferArray = new Uint8Array(gpuBuffer.getMappedRange());
   gpuBufferArray.set(new Uint8Array(buffer, bufferView.byteOffset, bufferView.byteLength));
+  // if (usage === GPUBufferUsage.INDEX) {
+  //   console.log(gpuBufferArray);
+  // } else {
+  //   console.log(new Float32Array(gpuBufferArray.buffer));
+  // }
+  
   gpuBuffer.unmap();
 
   return gpuBuffer;
@@ -458,7 +464,7 @@ export class TinyGltfWebGpu extends TinyGltf {
     for (const [index, bufferView] of Object.entries(gltf.bufferViews)) {
       gltf.gpuBuffers[index] = createGpuBufferFromBufferView(device, bufferView, gltf.buffers[bufferView.buffer], bufferViewUsages[index]);
     }
-    console.log(gltf.gpuBuffers);
+    // console.log(gltf.gpuBuffers);
 
     gltf.gpuTextures = [];
     if (gltf.images?.length) {
