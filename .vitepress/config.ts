@@ -53,6 +53,10 @@ export default defineConfig({
       collapsible: false,
       collapsed: false,
     }) as any,
+    footer: {
+      message: 'Released under the <a href="https://github.com/shrekshao">3-Clause BSD License</a>',
+      copyright: '© 2023-present <a href="https://github.com/shrekshao">shrekshao</a>'
+    }
   },
   locales: {
     root: {

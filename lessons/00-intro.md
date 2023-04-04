@@ -1,33 +1,92 @@
 # Intro
 
-
 If you are asked to write a program that draws on a 2D blank canvas based on a given description of the scene, what will you end up with?
 
-That's basically what computer graphics is all about.
+Let's better define the problem with more details: 
+- Program input: a description of the scene. Let's start with a simple example: *"A red rectangle, with width and height being 50, at the top-left corner"*
+- Program output: A 100x100 2D canvas, represented by an array of pixels. Each pixel value has a `Color`, represented by 3 numbers: <span style="color:#f00">Red</span>, <span style="color:#0f0">Green</span>, <span style="color:#00f">Blue</span>. and Alpha (how transparent it is).
 
-You are probably already familiar with the concept that we can use an array to represent the canvas. Each element in the array represents the `Color` for that pixel. And any `Color` can be represented by 4 numbers: Red, Green, Blue, and Alpha. Interpolations of Red, Green, Blue channels can give you any colors and Alpha channel decide how transparent it is.
+Using Typescript and HTML to implement this, we might have some simplest working code like this:
 
-What if I asked you to draw a red rectangle at top-left corner?
-
-```typescript
-const c = document.getElementById("myCanvas");
+``` typescript
+const c = document.createElement("canvas");
+c.width = 100;
+c.height = 100;
+document.body.appendChild(c);
 const ctx = c.getContext("2d");
-const imgData = ctx.createImageData(c.width, 100);
-
-for (let i = 0; i < imgData.data.length; i += 4) {
-  // TODO: decide coord
-  imgData.data[i + 0] = 255;
-  imgData.data[i + 1] = 0;
-  imgData.data[i + 2] = 0;
-  imgData.data[i + 3] = 255;
+const imgData = ctx.createImageData(c.width, c.height);
+for (let x = 0; x < c.width; x++) {
+  for (let y = 0; y < c.height; y++) {
+    if (x <= 50 && y <= 50) {
+      const i = 4 * (x * c.height + y);
+      imgData.data[i + 0] = 255;
+      imgData.data[i + 1] = 0;
+      imgData.data[i + 2] = 0;
+      imgData.data[i + 3] = 255;
+    }
+  }
 }
+ctx.putImageData(imgData, 0, 0);
 ```
 
-What if the scene contains multiple objects? A blue circle; A person stand in front of a vehicle, by 3 meters, facing north-east; A clock with it's minitue leg rotating at the speed of 1 degree per minute;
+::: tip Prerequsite
+You should feel mostly comfortable reading this piece of program. If you are just not familiar with Typescript, you might find this helpful: [Tutorials for programmers from other languages](https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html)
+:::
 
-What if the world I want to draw is 3D? How do I describe the world and the view I want?
+You probably already notice that the program hardcoded the scene description. You are absolutely right. We just manually interprete the natural language scene description and it's not extendable at all. What if our scene can be made of different rectangles and circles? Then we might think of the following datastructure to describe the scene instead of natural langugae.
+
+``` typescript
+class DrawObject {
+  type: 'rect' | 'circle',
+  color: number[],
+};
+
+class Rect extends DrawObject {
+  top: number,
+  left: number,
+  bottom: number,
+  right: number
+};
+
+class Circle extends DrawObject {
+  x: number,
+  y: number,
+  radius: number
+};
+
+const shapes: DrawObject[];
+
+// ...
+```
+
+Now our program can draw scenes like *"2 blue 10x10 rects whose top-left are at (1, 10) and (40, 30), 1 yellow circle at (70, 10) with radius=10"*.
+
+What if we want to draw a vehicle? How do we precisely describe a vehicle? Maybe a rect plus two circles as the wheels. Then what if we want to draw a human? What if we want to draw a house, a human, and a vehicle with some relative position? How do we describe that?
+
+We are only talking about 2D cases that so far handled by our elementary school math. But what about all the 3D games? How is the 3D scene described? When in 3D space, how do I tell the program what view it should draw with? Maybe introduce some concept called camera?
+
+And what about the colors? a vehicle can have different colors on it's tire, body, etc. Also, the vehicle body can reflect the environment. It's one color under the sun, and another color under a roof. What about the windshield? It's transparent but what is the color of it?
+
+Hey, that's too many questions. But yeah, you just find out the general problem computer graphics is basically trying to solve.
+
+* Computer Graphics find ways to build the program whose:
+  - Input is a scene/world/set of objects to draw, which needs precisely describing
+  - Output is a *"Rendered"* image result
+
+<!-- ![](https://www.adriancourreges.com/img/blog/2015/gtav/a/00_final_frame.jpg) -->
+
+<figure>
+  <img src='https://www.adriancourreges.com/img/blog/2015/gtav/a/00_final_frame.jpg'>
+  <figcaption style="text-align: center">A rendered scene from the Game Grand Theft Auto 5 from an <a href='https://www.adriancourreges.com/blog/2015/11/02/gta-v-graphics-study/'>article</a> by Adrian Courrèges. You might find it very interesting after you learn some 3D graphics</figcaption>
+</figure>
 
 ::: tip
+Color
+TODO: linear interploation of RGB
+
+:::
+
+::: details More about Color space
 RGB to represent any colors? Well, not really. TODO: Color space, monitor gamma
 :::
 
