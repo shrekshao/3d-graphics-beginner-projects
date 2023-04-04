@@ -34,7 +34,7 @@ function resolveUri(uri, baseUrl) {
 }
 
 // Very simple AABB tracking so that we can position cameras sensibly.
-class AABB {
+export class AABB {
   min = vec3.fromValues(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
   max = vec3.fromValues(Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE);
 

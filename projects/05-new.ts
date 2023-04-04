@@ -5,12 +5,13 @@ import skinnedMeshVertexWGSL from '../src/shaders/05/skinned.vert.wgsl';
 import basicFragmentWGSL from '../src/shaders/05/basic.frag.wgsl';
 
 // import { TinyGltfWebGpu } from '../src/utils/tiny-gltf';
-import { TinyGltf } from '../src/utils/tiny-gltf';
+import { TinyGltf, AABB } from '../src/utils/tiny-gltf';
 import OrbitCamera from '../src/utils/orbitCamera';
 import { vec3, vec4, quat, mat4 } from 'gl-matrix';
 
 // const gltfUrl = '../assets/gltf/Buggy.glb';
-const gltfUrl = '../assets/gltf/di-player-test.glb';
+// const gltfUrl = '../assets/gltf/di-player-test.glb';
+const gltfUrl = '../assets/gltf/di-player-test-hair-rig.glb';
 // const gltfUrl = '../assets/gltf/DamagedHelmet.glb';
 
 // Shader locations and source are unchanged from the previous sample.
@@ -170,7 +171,15 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
 
   const loader = new TinyGltf();
   const gltf = await loader.loadFromUrl(gltfUrl);
-  const sceneAabb = gltf.scenes[gltf.scene].aabb;
+  // const sceneAabb = gltf.scenes[gltf.scene].aabb;
+  // console.log(sceneAabb);
+  // Temp hack for gltf with only skinned mesh
+  // The aabb computed for static mesh is not correct anymore.
+  const sceneAabb = new AABB({
+    min: new Float32Array([-2.878838062286377, -0.021465064957737923, -3.228097915649414]),
+    max: new Float32Array([2.8631608486175537, 11.281305313110352, 3.417842388153076]),
+  });
+
   console.log(gltf);
 
   camera.target = sceneAabb.center;
