@@ -442,9 +442,10 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
       
     }
 
-    update(t: number) {
+    update(curTime: number) {
       // Get value from sampler and channel
       for (const c of this.channels) {
+        let t = curTime;
         const s = c.sampler;
 
         // LINEAR
@@ -455,13 +456,9 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
 
         const len = s.input.length;
         if (len > 1) {
-          // s.idx = 0;
           if (t > s.endT) {
-            // t -= s.inputMax * Math.ceil((t - s.endT) / s.inputMax);
             t -= s.inputMax * Math.ceil((t - s.endT) / s.inputMax);
             s.idx = 0;
-            // s.idx -= s.input.length;
-            // console.log(t);
           }
 
           while (s.idx <= len - 2 && t >= s.input[s.idx + 1]) {
@@ -473,8 +470,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
             t -= s.inputMax;
             s.idx = 0;
           }
-
-          
 
           // const v4lerp = s.outputCount === 4 ? quat.slerp : vec4.lerp;
         
