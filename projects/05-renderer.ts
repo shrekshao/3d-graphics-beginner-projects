@@ -77,6 +77,8 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
   const gltf = await loader.loadFromUrl(gltfUrl);
   const sceneAabb = gltf.scenes[gltf.scene].aabb;
   console.log(gltf);
+  console.log(gltf.accessors[3231]);
+  console.log(gltf.gpuBuffers[3231]);
 
   camera.target = sceneAabb.center;
   camera.maxDistance = sceneAabb.radius * 2.0;
@@ -268,7 +270,7 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
       return a.attributes[0].shaderLocation - b.attributes[0].shaderLocation;
     });
 
-    console.log(sortedBufferLayout);
+    // console.log(sortedBufferLayout);
 
     // Ensure that the gpuBuffers are saved in the same order as the buffer layout.
     const sortedGpuBuffers = [];

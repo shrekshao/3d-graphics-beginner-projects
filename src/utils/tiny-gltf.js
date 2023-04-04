@@ -9,7 +9,7 @@
  */
 
 import { WebGPUMipmapGenerator } from './webgpu-mipmap-generator.js';
-import { mat4, vec3 } from 'gl-matrix';
+import { mat4, vec3, quat } from 'gl-matrix';
 
 const GLB_MAGIC = 0x46546C67;
 const CHUNK_TYPE = {
@@ -17,9 +17,12 @@ const CHUNK_TYPE = {
   BIN: 0x004E4942,
 };
 
-const DEFAULT_TRANSLATION = [0, 0, 0];
-const DEFAULT_ROTATION = [0, 0, 0, 1];
-const DEFAULT_SCALE = [1, 1, 1];
+const DEFAULT_TRANSLATION = vec3.fromValues(0, 0, 0);
+const DEFAULT_ROTATION = quat.fromValues(0, 0, 0, 1);
+const DEFAULT_SCALE = vec3.fromValues(1, 1, 1);
+// const DEFAULT_TRANSLATION = [0, 0, 0];
+// const DEFAULT_ROTATION = [0, 0, 0, 1];
+// const DEFAULT_SCALE = [1, 1, 1];
 
 const absUriRegEx = new RegExp(`^${window.location.protocol}`, 'i');
 const dataUriRegEx = /^data:/;
@@ -95,6 +98,7 @@ function setWorldMatrix(gltf, node, parentWorldMatrix) {
       node.rotation,
       node.translation,
       node.scale);
+    node.localMatrix = mat4.clone(node.worldMatrix);
   }
 
   mat4.multiply(node.worldMatrix, parentWorldMatrix, node.worldMatrix);
