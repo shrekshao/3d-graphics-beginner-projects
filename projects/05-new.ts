@@ -25,13 +25,13 @@ const ShaderLocations = {
 };
 
 const Type2NumOfComponent = {
-  'SCALAR': 1,
-  'VEC2': 2,
-  'VEC3': 3,
-  'VEC4': 4,
-  'MAT2': 4,
-  'MAT3': 9,
-  'MAT4': 16
+  SCALAR: 1,
+  VEC2: 2,
+  VEC3: 3,
+  VEC4: 4,
+  MAT2: 4,
+  MAT3: 9,
+  MAT4: 16,
 };
 
 // function getPipelineArgs(primitive, buffers) {
@@ -176,8 +176,12 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
   // Temp hack for gltf with only skinned mesh
   // The aabb computed for static mesh is not correct anymore.
   const sceneAabb = new AABB({
-    min: new Float32Array([-2.878838062286377, -0.021465064957737923, -3.228097915649414]),
-    max: new Float32Array([2.8631608486175537, 11.281305313110352, 3.417842388153076]),
+    min: new Float32Array([
+      -2.878838062286377, -0.021465064957737923, -3.228097915649414,
+    ]),
+    max: new Float32Array([
+      2.8631608486175537, 11.281305313110352, 3.417842388153076,
+    ]),
   });
 
   console.log(gltf);
@@ -301,7 +305,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     ],
   });
 
-
   // // For animating purpose
   // interface Node {
   //   children: Node[];
@@ -317,27 +320,27 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
   interface AnimationSampler {
     // Only takes care of float32 type
     // Assume linear interpolation
-    input: Float32Array,
-    output: Float32Array,
+    input: Float32Array;
+    output: Float32Array;
 
-    outputCount: number,  // 4->quad.lerp, 3->vec.lerp
+    outputCount: number; // 4->quad.lerp, 3->vec.lerp
 
-    endT: number,
-    inputMax: number,
+    endT: number;
+    inputMax: number;
 
     // lerp(idx, idx+1)
-    idx: number,
-  };
+    idx: number;
+  }
 
   interface AnimationChannel {
-    sampler: AnimationSampler,
-    target: 'rotation' | 'translation' | 'scale',
+    sampler: AnimationSampler;
+    target: 'rotation' | 'translation' | 'scale';
     // for joint node transform only
     // This is idx in SkinObject.jointMatrices dynamic buffer
-    jointIdx: number,
-    
+    jointIdx: number;
+
     // node idx in gltf scene node graph
-    nodeIdx: number,
+    nodeIdx: number;
   }
 
   const animationOutputValueVec4a = vec4.create();
@@ -375,11 +378,9 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
       for (const c of animation.channels) {
         const nodeIdx = c.target.node;
 
-
         // if (!(nodeIdx in skin.nodeIdx2JointIdx)) {
         //   console.error('Unrelated animation target nodeIdx: ', nodeIdx);
         // }
-
 
         // let sampler: AnimationSampler;
         // if (c.sampler in samplerIdx2Samplers) {
@@ -412,13 +413,12 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
         sampler.inputMax = sampler.endT - sampler.input[0];
 
         // console.log(sampler);
-        
-        
+
         const channel: AnimationChannel = {
           nodeIdx,
           jointIdx: skin.nodeIdx2JointIdx[nodeIdx],
           target: c.target.path,
-          sampler
+          sampler,
         };
 
         this.channels.push(channel);
@@ -448,7 +448,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
           this.parseNode(childIdx, node.worldMatrix);
         }
       }
-      
     }
 
     update(curTime: number) {
@@ -473,7 +472,7 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
           while (s.idx <= len - 2 && t >= s.input[s.idx + 1]) {
             s.idx++;
           }
-  
+
           if (s.idx >= len - 1) {
             // loop
             t -= s.inputMax;
@@ -481,34 +480,42 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
           }
 
           // const v4lerp = s.outputCount === 4 ? quat.slerp : vec4.lerp;
-        
+
           const i = s.idx;
           const o = i * s.outputCount;
           const on = o + s.outputCount;
 
-          const u = Math.max(0,t - s.input[i] )
-            / (s.input[i+1] - s.input[i]);
+          const u = Math.max(0, t - s.input[i]) / (s.input[i + 1] - s.input[i]);
 
-          for (let j = 0; j < s.outputCount; j++ ) {
+          for (let j = 0; j < s.outputCount; j++) {
             animationOutputValueVec4a[j] = s.output[o + j];
             animationOutputValueVec4b[j] = s.output[on + j];
           }
 
           if (s.outputCount === 4) {
             // quat
-            quat.slerp(lerpResult, animationOutputValueVec4a, animationOutputValueVec4b, u);
+            quat.slerp(
+              lerpResult,
+              animationOutputValueVec4a,
+              animationOutputValueVec4b,
+              u
+            );
           } else {
             // translate, scale, (vec3)
-            vec4.lerp(lerpResult, animationOutputValueVec4a, animationOutputValueVec4b, u);
+            vec4.lerp(
+              lerpResult,
+              animationOutputValueVec4a,
+              animationOutputValueVec4b,
+              u
+            );
           }
         } else {
           t = s.input[0];
           s.idx = 0;
-          for (let j = 0; j < s.outputCount; j++ ) {
+          for (let j = 0; j < s.outputCount; j++) {
             lerpResult[j] = s.output[j];
           }
         }
-        
 
         if (s.outputCount === 4) {
           // quat
@@ -526,14 +533,13 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
 
       this.skin.updateJointMatricesDynamicBuffer();
     }
-  };
-
+  }
 
   function processGltfModel(gltf) {
     interface GPUBufferSetup {
       curOffset: number;
       mapped: Uint8Array;
-    };
+    }
 
     function getGPUBufferSetup(gpuBuffer: GPUBuffer): GPUBufferSetup {
       return {
@@ -587,7 +593,7 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
         // const animation = gltf.animations[14];  // forward dribble
         // const animation = gltf.animations[16];  // juggle
         // const animation = gltf.animations[17];  // strike
-        const animation = gltf.animations[20];  //
+        const animation = gltf.animations[20]; //
         console.log(animation);
         curAnimation = new Animation(gltf, animation, skinObjects[0]);
       }
@@ -952,13 +958,9 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     cameraPosition.set(camera.position);
     timeArray[0] = curTime;
 
-
     if (curAnimation) {
       curAnimation.update(curTime);
     }
-
-
-
 
     curTime += t - prevTime;
     prevTime = t;
