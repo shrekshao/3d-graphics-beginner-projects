@@ -44,7 +44,7 @@ import { getSidebar } from 'vitepress-plugin-auto-sidebar';
 // }
 
 export default defineConfig({
-  title: '3D Graphics Beginner Projects',
+  title: '3D Graphics Beginner Tutorials and Projects',
   description: '',
   themeConfig: {
     sidebar: getSidebar({

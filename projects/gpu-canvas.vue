@@ -26,30 +26,8 @@ onMounted(async () => {
 
   emit('init', context, device);
 });
-
-// export default defineComponent({
-//   // props: defineProps<{
-//   //   width: number,
-//   // }>(),
-//   emit,
-
-//   async mounted() {
-//     // mounted() {
-//     const canvas = document.querySelector('canvas');
-
-//     const adapter = await navigator.gpu.requestAdapter();
-//     const device = await adapter.requestDevice();
-
-//     // if (!pageState.active) return;
-//     const context = canvas.getContext('webgpu') as GPUCanvasContext;
-
-//     this.$emit('init', context, device);
-
-//     // },
-//   },
-// });
 </script>
 
 <template>
-  <canvas :width="width ?? 600" :height="height ?? 600" />
+  <canvas :width='width ?? 600' :height='height ?? 600' />
 </template>

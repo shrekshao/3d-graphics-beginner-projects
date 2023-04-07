@@ -1,7 +1,7 @@
 ---
 # layout: home
 
-title: Modern 3D Graphics Beginner Projects in WebGPU
+title: Modern 3D Graphics Beginner Tutorials and Projects in WebGPU
 
 ---
 
@@ -20,7 +20,7 @@ Then you are ready to go. Shut up and start learning and coding now! [Lesson 0 I
     - Using WebGPU, a modern graphics API in web (as of 2023), backed by D3D12, Metal, Vulkan, etc.
     - Using Typescript. Here are [Tutorials for programmers from other languages](https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html).
     - Boilerplates to keep you away from non-graphics related *"yak-shaving"* details. You can jump in and start programming 3D graphics stuff.
-  - Providing essential knowledge to start Made by people with industry background
+  - Providing essential graphics knowledge to start working with real-world applications development, for your next job or your next projects.
 
 **This is for:**
   - People want to learn *real* modern and practical graphics knowledge used by the industry.
@@ -31,7 +31,7 @@ Then you are ready to go. Shut up and start learning and coding now! [Lesson 0 I
     :::
 
     ::: tip non-GPU based lessons
-    Projects from university courses are often based on some GUI framework (Qt) and ask you to write CPU only code. While one can argue that you can learn the algorithm by writing CPU code without using any GPU API, to me it feels like you want to learn computer programming in 2023 but chooses to start with Pascal. Just like that almost no software today you are familiar with is built by Pascal, no games/engines/design tool that you are familiar with is built without using GPU API.
+    Projects from university courses are often based on some GUI framework (Qt) and ask you to write CPU only code (i.e. no shaders). While one can argue that you can learn the algorithm by writing CPU code without using any GPU API, to me it feels like you want to learn computer programming in 2023 but chooses to start with Pascal. Just like that almost no software today you are familiar with is built by Pascal, no games/engines/design tool that you are familiar with is built without using GPU API.
     :::
   - People prefer to learn in a project-driven way (like me, as I usually become absent minded during lectures)
   - People already know how to program, in **any** mainstream programming language. (C/C++, Java, C#, Python, Javascript, Typescript etc.) And that's the only prerequisite needed.
@@ -44,3 +44,5 @@ Then you are ready to go. Shut up and start learning and coding now! [Lesson 0 I
     - [UCSB GAMES 101](https://sites.cs.ucsb.edu/~lingqi/teaching/games101.html) is one of them which is recent and available for public.
   - A set of step-by-step tutorials to build ready-to-use 3D apps ([Three.js](https://threejs.org/), [Babylon.js](https://www.babylonjs.com/), [Unity](https://unity.com/), etc.)
     - This lesson and project introduces the general 3D graphics knowledge behind these renderers/engines. You will feel more comfortable playing with those after knowing how they work underhood.
+
+This set of tutorials and projects is initially made by [shrekshao](https://github.com/shrekshao) and open-sourced under the BSD-3-Clause license. Contributions are welcomed!
