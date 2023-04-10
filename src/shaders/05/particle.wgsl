@@ -123,13 +123,56 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
   // var worldPosition = textureLoad(texture, coord, 0);
   // worldPosition = vec4f(f32(idx) / 5000, 0, 0, 1);
 
-  // Simple position pin
-  particle.position = worldPosition.xyz;
+  // // Simple position pin
+  // particle.position = worldPosition.xyz;
+  // particle.lifetime = 0;
+  // particle.color = vec4f(1, 0, 0, 1);
+  // particle.velocity = vec3f(0);
+
+
+  // Some simulation
   particle.lifetime = 0;
-  particle.color = vec4f(1, 0, 0, 1);
-  particle.velocity = vec3f(0);
+  
+
+  if (worldPosition.x >= 99999.0) {
+    // no triangles on uv position texture
+    particle.velocity = vec3f(0.0);
+    particle.position = vec3(99999, 99999, 99999);
+    particle.color = vec4f(0, 0, 0, 0);
+  } else {
+    particle.color = vec4f(1, 0, 0, 1);
+
+    var dir = worldPosition.xyz - particle.position;
+    let dist = length(dir);
+    // dir = dir / dist;
+
+    // var acc = vec3f(0);
+    // // acc = 0.0005 * normalize(dir) * (dist * dist) * rand();
+    // acc = 0.000005 * normalize(dir) * (dist * dist);
+
+    // let acc = (0.0001 - 0.00005 * dot(dir, particle.velocity) ) * dir * dist * dist * 0.01 ;
+
+    // particle.velocity = 0.999 * particle.velocity + acc;
+
+    // smoothstep()
+
+    // let expectedVelocity = dir * (0.9 + 0.2 * rand());
+    let expectedVelocity = dir;
+
+    let acc = 0.09 * (expectedVelocity - particle.velocity) + 0.01 * normalize(dir);
+
+    particle.velocity = particle.velocity + acc;
+
+    // particle.velocity = 0.1 * dir * dist;
 
 
+    particle.position = particle.position + particle.velocity;
+  }
+
+  
+
+  
+  
 
   // // Apply gravity
   // particle.velocity.z = particle.velocity.z - sim_params.deltaTime * 0.5;

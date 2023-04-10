@@ -992,6 +992,8 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     size: numParticles * particleInstanceByteSize,
     // usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+
+    mappedAtCreation: true,
   });
 
   // TEMP: test particlesBuffer
@@ -1006,17 +1008,22 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
   //   // usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   //   mappedAtCreation: true,
   // });  
-  // let tempParticlePositions = new Float32Array(particlesBuffer.getMappedRange());
-  // const aabbExtent = vec3.create();
-  // vec3.subtract(aabbExtent, sceneAabb.max, sceneAabb.min);
-  // for (let i = 0; i < numParticles; i++) {
-  //   const o = i * particleInstanceByteSize / 4;
-  //   tempParticlePositions[o] = Math.random() * aabbExtent[0] + sceneAabb.min[0];
-  //   tempParticlePositions[o + 1] = Math.random() * aabbExtent[1] + sceneAabb.min[1];
-  //   tempParticlePositions[o + 2] = Math.random() * aabbExtent[2] + sceneAabb.min[2];
-  // }
-  // // console.log(tempParticlePositions);
-  // particlesBuffer.unmap();
+  let tempParticlePositions = new Float32Array(particlesBuffer.getMappedRange());
+  const aabbExtent = vec3.create();
+  vec3.subtract(aabbExtent, sceneAabb.max, sceneAabb.min);
+  for (let i = 0; i < numParticles; i++) {
+    const o = i * particleInstanceByteSize / 4;
+    tempParticlePositions[o] = Math.random() * aabbExtent[0] + sceneAabb.min[0];
+    tempParticlePositions[o + 1] = Math.random() * aabbExtent[1] + sceneAabb.min[1];
+    tempParticlePositions[o + 2] = Math.random() * aabbExtent[2] + sceneAabb.min[2];
+
+    // velocity
+    tempParticlePositions[o + 9] = 0;
+    tempParticlePositions[o + 10] = 0;
+    tempParticlePositions[o + 11] = 0;
+  }
+  // console.log(tempParticlePositions);
+  particlesBuffer.unmap();
   
   // device.queue.writeBuffer(particlesBuffer, 0, tempParticlePositions);
 
@@ -1210,7 +1217,8 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
       colorAttachments: [
         {
           view: textureView,
-          clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+          // clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+          clearValue: { r: 99999.0, g: 99999.0, b: 99999.0, a: 1.0 },
           loadOp: 'clear',
           storeOp: 'store',
         },
