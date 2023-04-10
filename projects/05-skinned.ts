@@ -3,32 +3,26 @@
 import staticMeshVertexWGSL from '../src/shaders/05/static-mesh.vert.wgsl';
 import skinnedMeshVertexWGSL from '../src/shaders/05/skinned.vert.wgsl';
 import basicFragmentWGSL from '../src/shaders/05/basic.frag.wgsl';
-import skinnedMeshParticleWGSL from '../src/shaders/05/write-position-to-texture.wgsl';
-
-import particleWGSL from '../src/shaders/05/particle.wgsl';
 
 // import { TinyGltfWebGpu } from '../src/utils/tiny-gltf';
 import { TinyGltf, AABB } from '../src/utils/tiny-gltf';
 import OrbitCamera from '../src/utils/orbitCamera';
 import { vec3, vec4, quat, mat4 } from 'gl-matrix';
-import { assert } from '../src/utils/util';
 
 // const gltfUrl = '../assets/gltf/Buggy.glb';
 // const gltfUrl = '../assets/gltf/di-player-test.glb';
-// const gltfUrl = '../assets/gltf/di-player-test-hair-rig.glb';
-// const gltfUrl = '../assets/gltf/di-player-test-hair-rig-uv-particle.glb';
-const gltfUrl = '../assets/gltf/di-long-idle.glb';
+const gltfUrl = '../assets/gltf/di-player-test-hair-rig.glb';
 // const gltfUrl = '../assets/gltf/DamagedHelmet.glb';
 
-// // Shader locations and source are unchanged from the previous sample.
-// const ShaderLocations = {
-//   POSITION: 0,
-//   NORMAL: 1,
-//   TEXCOORD_0: 2,
+// Shader locations and source are unchanged from the previous sample.
+const ShaderLocations = {
+  POSITION: 0,
+  NORMAL: 1,
+  TEXCOORD_0: 2,
 
-//   JOINTS_0: 3,
-//   WEIGHTS_0: 4,
-// };
+  JOINTS_0: 3,
+  WEIGHTS_0: 4,
+};
 
 const Type2NumOfComponent = {
   SCALAR: 1,
@@ -165,15 +159,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     device,
     format: presentationFormat,
     alphaMode: 'opaque',
-  });
-
-  const positionTextureFormat = 'rgba32float';
-  // const positionTextureSize = [1024, 1024];
-  const positionTextureSize = [context.canvas.width, context.canvas.height];
-  const positionTexture = device.createTexture({
-    size: positionTextureSize,
-    format: positionTextureFormat,
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
   const depthTexture = device.createTexture({
@@ -556,8 +541,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
       mapped: Uint8Array;
     }
 
-    // let printed = false;
-
     function getGPUBufferSetup(gpuBuffer: GPUBuffer): GPUBufferSetup {
       return {
         curOffset: 0,
@@ -585,8 +568,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
       //   console.log(new Float32Array(gpuBufferSetup.mapped.buffer));
       // }
 
-      // console.log(new Float32Array(gpuBufferSetup.mapped.buffer));
-
       const offset = gpuBufferSetup.curOffset;
       gpuBufferSetup.curOffset += bufferView.byteLength;
       // console.log(gpuBufferSetup.curOffset);
@@ -612,8 +593,7 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
         // const animation = gltf.animations[14];  // forward dribble
         // const animation = gltf.animations[16];  // juggle
         // const animation = gltf.animations[17];  // strike
-        // const animation = gltf.animations[20]; //
-        const animation = gltf.animations[0]; //
+        const animation = gltf.animations[20]; //
         console.log(animation);
         curAnimation = new Animation(gltf, animation, skinObjects[0]);
       }
@@ -672,25 +652,21 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
         const indexInfo = uploadToBuffer(indexBufferSetup, primitive.indices);
         const drawIndexedCount = gltf.accessors[primitive.indices].count;
 
-        assert('POSITION' in primitive.attributes);
-        assert('NORMAL' in primitive.attributes);
-        assert('TEXCOORD_0' in primitive.attributes);
-
-        // if (!('POSITION' in primitive.attributes)) {
-        //   console.error(
-        //     'Unsupported: gltf model mesh primitive has no POSITION attribute'
-        //   );
-        // }
-        // if (!('NORMAL' in primitive.attributes)) {
-        //   console.error(
-        //     'Unsupported: gltf model mesh primitive has no NORMAL attribute'
-        //   );
-        // }
-        // if (!('TEXCOORD_0' in primitive.attributes)) {
-        //   console.error(
-        //     'Unsupported: gltf model mesh primitive has no TEXCOORD_0 attribute'
-        //   );
-        // }
+        if (!('POSITION' in primitive.attributes)) {
+          console.error(
+            'Unsupported: gltf model mesh primitive has no POSITION attribute'
+          );
+        }
+        if (!('NORMAL' in primitive.attributes)) {
+          console.error(
+            'Unsupported: gltf model mesh primitive has no NORMAL attribute'
+          );
+        }
+        if (!('TEXCOORD_0' in primitive.attributes)) {
+          console.error(
+            'Unsupported: gltf model mesh primitive has no TEXCOORD_0 attribute'
+          );
+        }
 
         // Assume no arraystride (no interleaved attributes)
         // const vertexOffset = vertexBufferSetup.curOffset;
@@ -785,40 +761,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     code: basicFragmentWGSL,
   });
 
-
-  const staticMeshVertexBufferLayout: GPUVertexBufferLayout[] = [
-    {
-      arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
-      attributes: [
-        {
-          format: 'float32x3',
-          offset: 0,
-          shaderLocation: 0,
-        },
-      ],
-    },
-    {
-      arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
-      attributes: [
-        {
-          format: 'float32x3',
-          offset: 0,
-          shaderLocation: 1,
-        },
-      ],
-    },
-    {
-      arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
-      attributes: [
-        {
-          format: 'float32x2',
-          offset: 0,
-          shaderLocation: 2,
-        },
-      ],
-    },
-  ];
-
   const staticMeshPipeline = device.createRenderPipeline({
     label: 'Static Mesh',
     layout: device.createPipelineLayout({
@@ -828,7 +770,38 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     vertex: {
       module: staticMeshVertexModule,
       entryPoint: 'vertexMain',
-      buffers: staticMeshVertexBufferLayout,
+      buffers: [
+        {
+          arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'float32x3',
+              offset: 0,
+              shaderLocation: 0,
+            },
+          ],
+        },
+        {
+          arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'float32x3',
+              offset: 0,
+              shaderLocation: 1,
+            },
+          ],
+        },
+        {
+          arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'float32x2',
+              offset: 0,
+              shaderLocation: 2,
+            },
+          ],
+        },
+      ],
     },
     primitive: {
       topology: 'triangle-list',
@@ -855,34 +828,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
       ],
     },
   });
-
-  const skinnedMeshVertexBufferLayout: GPUVertexBufferLayout[] = [
-    ...staticMeshVertexBufferLayout,
-    // joints
-    {
-      arrayStride: 4 * Uint8Array.BYTES_PER_ELEMENT,
-      attributes: [
-        {
-          format: 'uint8x4',
-          offset: 0,
-          shaderLocation: 3,
-        },
-      ],
-    },
-
-    // weights
-    {
-      arrayStride: 4 * Float32Array.BYTES_PER_ELEMENT,
-      attributes: [
-        {
-          format: 'float32x4',
-          offset: 0,
-          shaderLocation: 4,
-        },
-      ],
-    },
-  ];
-
 
   const skinnedMeshPipeline = device.createRenderPipeline({
     label: 'Skinned Mesh',
@@ -897,7 +842,62 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     vertex: {
       module: skinnedMeshVertexModule,
       entryPoint: 'vertexMain',
-      buffers: skinnedMeshVertexBufferLayout,
+      buffers: [
+        {
+          arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'float32x3',
+              offset: 0,
+              shaderLocation: 0,
+            },
+          ],
+        },
+        {
+          arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'float32x3',
+              offset: 0,
+              shaderLocation: 1,
+            },
+          ],
+        },
+        {
+          arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'float32x2',
+              offset: 0,
+              shaderLocation: 2,
+            },
+          ],
+        },
+
+        // joints
+        {
+          arrayStride: 4 * Uint8Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'uint8x4',
+              offset: 0,
+              shaderLocation: 3,
+            },
+          ],
+        },
+
+        // weights
+        {
+          arrayStride: 4 * Float32Array.BYTES_PER_ELEMENT,
+          attributes: [
+            {
+              format: 'float32x4',
+              offset: 0,
+              shaderLocation: 4,
+            },
+          ],
+        },
+      ],
     },
     primitive: {
       topology: 'triangle-list',
@@ -925,277 +925,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     },
   });
 
-  const skinnedMeshWriteParticlePositionTextureModule = device.createShaderModule({
-    code: skinnedMeshParticleWGSL,
-  });
-
-  const skinnedMeshWriteParticlePositionTexturePipeline = device.createRenderPipeline({
-    label: 'Skinned Mesh Write Particle Position',
-    layout: device.createPipelineLayout({
-      label: 'Skinned Mesh Write Particle Position',
-      bindGroupLayouts: [
-        frameBindGroupLayout,
-        staticStorageBindGroupLayout,
-        skinBindGroupLayout,
-      ],
-    }),
-    vertex: {
-      module: skinnedMeshWriteParticlePositionTextureModule,
-      entryPoint: 'vertexMain',
-      buffers: skinnedMeshVertexBufferLayout,
-    },
-    primitive: {
-      topology: 'triangle-list',
-      cullMode: 'none',
-      // cullMode: 'back',
-    },
-    multisample: {
-      count: 1,
-    },
-    depthStencil: {
-      format: 'depth24plus',
-      depthWriteEnabled: true,
-      depthCompare: 'less',
-    },
-    fragment: {
-      module: skinnedMeshWriteParticlePositionTextureModule,
-      entryPoint: 'fragmentMain',
-      targets: [
-        {
-          // TODO: use float32
-          // format: presentationFormat,
-          format: positionTextureFormat,
-        },
-      ],
-    },
-  });
-
-
-
-
-
-
-  // Particle stuff
-
-  const numParticles = 100000;
-  const particlePositionOffset = 0;
-  const particleColorOffset = 4 * 4;
-  const particleInstanceByteSize =
-    3 * 4 + // position
-    1 * 4 + // lifetime
-    4 * 4 + // color
-    3 * 4 + // velocity
-    1 * 4 + // padding
-    0;
-
-  const particlesBuffer = device.createBuffer({
-    size: numParticles * particleInstanceByteSize,
-    // usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-  });
-
-  // TEMP: test particlesBuffer
-  // let tempParticlePositions = new Float32Array([1.8367099231598242e-40, 5.605193857299268e-45, 4.5918308598381336e-40, 5.510157795448759e-40, 1.8368360400216135e-40, 3.673545963181438e-40, 8.265250706157782e-40, 3.673573989150724e-40, 1.1938768643369933e-39, 3.673489911242865e-40, 4.591956976699923e-40, 1.3775506592499044e-39, 1.56123566455053e-39, 2.112247240200013e-39, 2.2040827363580042e-39, 2.3877579325693796e-39, 2.295925239008317e-39, 2.5714317274822907e-39, 2.2959140286206025e-39, 1.744913663358834e-39, 1.8367491595168253e-39, 2.7551055223952018e-39, 2.6632728288341392e-39, 2.938779317308113e-39, 2.6632658223418176e-39, 2.38776774165863e-39, 2.479603237816621e-39, 3.122453112221024e-39, 3.0306204186599614e-39, 3.306126907133935e-39, 3.03062322125689e-39, 3.3979638045903905e-39, 3.489799300748382e-39, 2.0204145466389504e-39, 2.204056111687182e-39, 9.183970005338419e-41, 3.214292812274408e-39, 3.306135314924721e-39, 3.9489837880306594e-39, 1.9285762478840306e-39, 2.0203921258635213e-39, 2.7551769886168823e-40, 2.5714219183930404e-39, 1.8367239361444675e-39, 6.428624860905817e-40, 2.4795976326227638e-39, 2.5714107080053258e-39, 9.18371777161484e-40, 2.9387737121142555e-39, 2.4795780144442633e-39, 1.1020455720743951e-39, 2.846945222448586e-39, 2.938758297831148e-39, 1.2857193669873062e-39, 3.306131111029328e-39, 3.489809109837632e-39, 4.1326575829435705e-39, 2.1122710622739065e-39, 3.581631994309444e-39, 3.030619017361497e-39, 2.2040841376564685e-39, 2.1122654570800492e-39, 3.1224559148179526e-39, 3.581626389115587e-39, 2.755111127589059e-39, 3.3979596006949975e-39, 2.7551083249921304e-39, 2.8469522289409076e-39, 3.489800702046846e-39, 9.1869127321135e-41, 2.2041093610288264e-39, 3.21429981876673e-39, 4.5917748078995606e-40, 5.885453550164232e-44, 3.67347870085515e-39, 1.3775394488621898e-39, 4.5923913792238635e-40, 3.857152495768061e-39, 2.8469228016731568e-39, 1.4694211878695037e-39, 4.132650576451249e-39, 4.408168275312937e-39, 4.2245014868923476e-39, 4.5918434715243125e-39, 4.5000093766647856e-39, 4.5918476754197055e-39, 4.95918966005167e-39, 5.234691944630251e-39, 4.5000219883509645e-39, 4.775528476824938e-39, 5.6020325279637515e-39, 4.4081836895960447e-39, 4.500019185754036e-39, 5.87756003591469e-39, 5.7857273423536274e-39, 6.153069326985592e-39, 6.428581420653423e-39, 6.33673891800311e-39, 5.785725941055163e-39, 6.612255215566334e-39]);
-
-
-
-
-  // const particlesBuffer = device.createBuffer({
-  //   size: numParticles * particleInstanceByteSize,
-  //   usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-  //   // usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-  //   mappedAtCreation: true,
-  // });  
-  // let tempParticlePositions = new Float32Array(particlesBuffer.getMappedRange());
-  // const aabbExtent = vec3.create();
-  // vec3.subtract(aabbExtent, sceneAabb.max, sceneAabb.min);
-  // for (let i = 0; i < numParticles; i++) {
-  //   const o = i * particleInstanceByteSize / 4;
-  //   tempParticlePositions[o] = Math.random() * aabbExtent[0] + sceneAabb.min[0];
-  //   tempParticlePositions[o + 1] = Math.random() * aabbExtent[1] + sceneAabb.min[1];
-  //   tempParticlePositions[o + 2] = Math.random() * aabbExtent[2] + sceneAabb.min[2];
-  // }
-  // // console.log(tempParticlePositions);
-  // particlesBuffer.unmap();
-  
-  // device.queue.writeBuffer(particlesBuffer, 0, tempParticlePositions);
-
-
-  const particleComputePipeline = device.createComputePipeline({
-    layout: 'auto',
-    compute: {
-      module: device.createShaderModule({
-        code: particleWGSL,
-      }),
-      entryPoint: 'simulate',
-    },
-  });
-
-  const simulationParams = {
-    simulate: true,
-    deltaTime: 0.04,
-  };
-
-  const simulationUBOBufferSize =
-    1 * 4 + // deltaTime
-    3 * 4 + // padding
-    4 * 4 + // seed
-    0;
-  const simulationUBOBuffer = device.createBuffer({
-    size: simulationUBOBufferSize,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(
-    simulationUBOBuffer,
-    0,
-    new Float32Array([
-      simulationParams.simulate ? simulationParams.deltaTime : 0.0,
-      0.0,
-      0.0,
-      0.0, // padding
-      Math.random() * 100,
-      Math.random() * 100, // seed.xy
-      1 + Math.random(),
-      1 + Math.random(), // seed.zw
-    ])
-  );
-
-  const particleComputeBindGroup = device.createBindGroup({
-    layout: particleComputePipeline.getBindGroupLayout(0),
-    entries: [
-      {
-        binding: 0,
-        resource: {
-          buffer: simulationUBOBuffer,
-        },
-      },
-      {
-        binding: 1,
-        resource: {
-          buffer: particlesBuffer,
-          offset: 0,
-          size: numParticles * particleInstanceByteSize,
-        },
-      },
-      {
-        binding: 2,
-        resource: positionTexture.createView(),
-      },
-    ],
-  });
-
-  const quadVertexBuffer = device.createBuffer({
-    size: 6 * 2 * 4, // 6x vec2<f32>
-    usage: GPUBufferUsage.VERTEX,
-    mappedAtCreation: true,
-  });
-  // prettier-ignore
-  const vertexData = [
-    -1.0, -1.0, +1.0, -1.0, -1.0, +1.0, -1.0, +1.0, +1.0, -1.0, +1.0, +1.0,
-  ];
-  new Float32Array(quadVertexBuffer.getMappedRange()).set(vertexData);
-  quadVertexBuffer.unmap();
-
-  // device.queue.writeBuffer(
-  //   quadVertexBuffer,
-  //   0,
-  //   new Float32Array(vertexData),
-  // );
-
-
-
-  const particleRenderPipeline = device.createRenderPipeline({
-    label: 'Particle render pipeline',
-    layout: device.createPipelineLayout({
-      label: 'Particle render pipeline',
-      bindGroupLayouts: [frameBindGroupLayout],
-    }),
-    vertex: {
-      module: device.createShaderModule({
-        code: particleWGSL,
-      }),
-      entryPoint: 'vs_main',
-      buffers: [
-        {
-          // instanced particles buffer
-          arrayStride: particleInstanceByteSize,
-          stepMode: 'instance',
-          attributes: [
-            {
-              // position
-              shaderLocation: 0,
-              offset: particlePositionOffset,
-              format: 'float32x3',
-            },
-            {
-              // color
-              shaderLocation: 1,
-              offset: particleColorOffset,
-              format: 'float32x4',
-            },
-          ],
-        },
-        {
-          // quad vertex buffer
-          arrayStride: 2 * 4, // vec2<f32>
-          stepMode: 'vertex',
-          attributes: [
-            {
-              // vertex positions
-              shaderLocation: 2,
-              offset: 0,
-              format: 'float32x2',
-            },
-          ],
-        },
-      ],
-    },
-    fragment: {
-      module: device.createShaderModule({
-        code: particleWGSL,
-      }),
-      entryPoint: 'fs_main',
-      targets: [
-        {
-          format: presentationFormat,
-          blend: {
-            color: {
-              srcFactor: 'src-alpha',
-              dstFactor: 'one',
-              operation: 'add',
-            },
-            alpha: {
-              srcFactor: 'zero',
-              dstFactor: 'one',
-              operation: 'add',
-            },
-          },
-        },
-      ],
-    },
-    primitive: {
-      topology: 'triangle-list',
-    },
-
-    // depthStencil: {
-    //   depthWriteEnabled: false,
-    //   // depthCompare: 'less',
-    //   depthCompare: 'always',
-    //   format: 'depth24plus',
-    // },
-  });
-
-
-
-
-
-
-
-
-
-
-
-
   // upload gltf models buffer to renderer buffer, and process draw info
   let prevTime = performance.now() * 0.001;
   let curTime = 0;
@@ -1203,8 +932,7 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
   function frame(t: number) {
     t *= 0.001;
     const commandEncoder = device.createCommandEncoder();
-    // const textureView = context.getCurrentTexture().createView();
-    const textureView = positionTexture.createView();
+    const textureView = context.getCurrentTexture().createView();
 
     const renderPassDescriptor: GPURenderPassDescriptor = {
       colorAttachments: [
@@ -1247,36 +975,35 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     // TODO: sort by material
     passEncoder.setBindGroup(1, staticStorageBindGroup);
 
-    // if (staticMeshDrawObjects.length > 0) {
-    //   passEncoder.setPipeline(staticMeshPipeline);
-    //   for (const d of staticMeshDrawObjects) {
-    //     // for (const [idx, vb] of d.vertexBuffers.entries()) {
-    //     for (let idx = 0; idx < d.vertexBuffers.length; idx++) {
-    //       const vb = d.vertexBuffers[idx];
-    //       // console.log(idx, vertexBuffer, vb.offset, vb.size);
-    //       passEncoder.setVertexBuffer(idx, vertexBuffer, vb.offset, vb.size);
-    //     }
-    //     passEncoder.setIndexBuffer(
-    //       indexBuffer,
-    //       'uint16',
-    //       d.indexOffset,
-    //       d.indexSize
-    //     );
+    if (staticMeshDrawObjects.length > 0) {
+      passEncoder.setPipeline(staticMeshPipeline);
+      for (const d of staticMeshDrawObjects) {
+        // for (const [idx, vb] of d.vertexBuffers.entries()) {
+        for (let idx = 0; idx < d.vertexBuffers.length; idx++) {
+          const vb = d.vertexBuffers[idx];
+          // console.log(idx, vertexBuffer, vb.offset, vb.size);
+          passEncoder.setVertexBuffer(idx, vertexBuffer, vb.offset, vb.size);
+        }
+        passEncoder.setIndexBuffer(
+          indexBuffer,
+          'uint16',
+          d.indexOffset,
+          d.indexSize
+        );
 
-    //     passEncoder.drawIndexed(
-    //       d.drawIndexedCount,
-    //       d.instanceCount,
-    //       0,
-    //       0,
-    //       d.firstInstance
-    //     );
-    //     // passEncoder.drawIndexed(d.drawIndexedCount);
-    //   }
-    // }
+        passEncoder.drawIndexed(
+          d.drawIndexedCount,
+          d.instanceCount,
+          0,
+          0,
+          d.firstInstance
+        );
+        // passEncoder.drawIndexed(d.drawIndexedCount);
+      }
+    }
 
     // Draw skinned mesh
-    // passEncoder.setPipeline(skinnedMeshPipeline);
-    passEncoder.setPipeline(skinnedMeshWriteParticlePositionTexturePipeline);
+    passEncoder.setPipeline(skinnedMeshPipeline);
     // for (let skinIdx = 0; skinIdx < skinObjects.length; skinIdx++) {
     // }
 
@@ -1311,50 +1038,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     }
 
     passEncoder.end();
-
-
-
-    // Particle simulation
-    {
-      const passEncoder = commandEncoder.beginComputePass();
-      passEncoder.setPipeline(particleComputePipeline);
-      passEncoder.setBindGroup(0, particleComputeBindGroup);
-      passEncoder.dispatchWorkgroups(Math.ceil(numParticles / 64));
-      passEncoder.end();
-    }
-
-    // Particle draw
-    {
-      const particleRenderPassDescriptor: GPURenderPassDescriptor = {
-        colorAttachments: [
-          {
-            view: context.getCurrentTexture().createView(),
-            clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-            loadOp: 'clear',
-            storeOp: 'store',
-          },
-        ],
-        // depthStencilAttachment: {
-        //   view: depthTexture.createView(),
-  
-        //   depthClearValue: 1.0,
-        //   depthLoadOp: 'clear',
-        //   depthStoreOp: 'store',
-        // },
-      };
-      const passEncoder = commandEncoder.beginRenderPass(particleRenderPassDescriptor);
-      passEncoder.setPipeline(particleRenderPipeline);
-      passEncoder.setBindGroup(0, frameBindGroup);
-      passEncoder.setVertexBuffer(0, particlesBuffer);
-      passEncoder.setVertexBuffer(1, quadVertexBuffer);
-      passEncoder.draw(6, numParticles, 0, 0);
-      passEncoder.end();
-    }
-
-
-
-
-
 
     device.queue.submit([commandEncoder.finish()]);
     requestAnimationFrame(frame);
