@@ -132,23 +132,41 @@ At this step we've turned *"the description of objects"* into just *data*. Compu
 
 ## How to describe and manage the scene, the view, in 3D?
 
-Okay, we've got vehicles, characters, houses, etc. But look at the GTA image, how do we put them together? I do tell that "I want to take this shot at that angle"? How to I manage the 3D scene
+Okay, we've got vehicles, characters, houses, etc. But look at the GTA image, how do we put them together? I do tell that "I want to take this shot at that angle"?
+
+Short answer is: math. Some basic usage of matrix math. We will learn the details in [Lesson 01 Matrix Maths](../lessons/01-matrix-math)
+
+But to give you an intuitive understanding of how it work, let's try go back to our earlier attempt of drawing shapes on a canvas. What if you are trying to build a 2D scrolling platformer game? Yes we have the canvas, the coordinate of the character and the background image. You might have already done the coordinate transform without noticing it.
+
+<ImgCaption src='https://cdn.teachertube.com/uploads/2019/03/12/485265/2d-platformer-part-1000.jpg'>
+What will you do when the character is moving towards the right edge of the screen/viewport? To track the character, intuitively we are very likely writing code to move the background image leftwards. Although the background(world) doesn't actually move, by doing so, the relative position of the character and the background. We are implicitly applying a transform of the background(world) to the coordinate system of the screen/viewport/camera.
+</ImgCaption>
 
 
-TODO: use 2D platformer to Intuitively introduce the coordinate systems. world space, view space.
 
 
 TODO: projections
 
-We will learn the details in [Lesson 01 Matrix Maths](../lessons/01-matrix-math)
 
 
 
-## How to draw the triangles?
 
+## How to draw the triangles with their vertices coordinate?
+
+What you do in your 2D draw program is actually called "rasterization".
+TODO: rasterize
+
+Rasterization isn't the only way to turn your triangle vertices numbers into pixels. Another widely used technicque is called Ray tracing.
+
+TODO: Ray trace.
+
+TODO: Ray march, SDF etc.
 
 ## How do we decide the colors of these triangles?
 
+TODO: shading
+
+The step is called "shading". And that's actually a very big research topic in computer graphics.
 
 ## Looks fine, but what is GPU doing here?
 
@@ -184,14 +202,10 @@ You must have heard GPUs are used for things like machine learning, or coin (cry
 
 TODO: GPGPU
 
+Instead of drawing to a traditional 2D rectangle canvas, when you draw your 3D scenes to 2 distorted 2D image, you are actually doing VR!
 
+TODO: VR, lightfield, hologram
 
-
-::: tip
-Color
-TODO: linear interploation of RGB
-
-:::
 
 ::: details Any colors?
 RGB to represent any colors? Well, not really. TODO: Color space, monitor gamma
