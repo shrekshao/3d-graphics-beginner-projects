@@ -1,0 +1,1 @@
+import{_ as a,c as e,o as r,N as o}from"./chunks/framework.9695c624.js";const m=JSON.parse('{"title":"Procedural","description":"","frontmatter":{},"headers":[],"relativePath":"lessons/07-procedural.md"}'),s={name:"lessons/07-procedural.md"},t=o("",6),c=[t];function d(i,n,l,h,u,_){return r(),e("div",null,c)}const P=a(s,[["render",d]]);export{m as __pageData,P as default};

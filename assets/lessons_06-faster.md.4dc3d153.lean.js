@@ -1,0 +1,1 @@
+import{_ as e,c as a,o as r,N as t}from"./chunks/framework.9695c624.js";const g=JSON.parse('{"title":"Faster (Performance)","description":"","frontmatter":{},"headers":[],"relativePath":"lessons/06-faster.md"}'),n={name:"lessons/06-faster.md"},i=t("",5),s=[i];function o(l,c,d,h,u,m){return r(),a("div",null,s)}const _=e(n,[["render",o]]);export{g as __pageData,_ as default};
