@@ -7,6 +7,10 @@ title: Modern 3D Graphics Beginner Tutorials and Projects in WebGPU
 
 # Modern 3D Graphics Beginner Projects in WebGPU
 
+::: warning
+⚠️ Under construction. Most lesssons and projects are empty or very sketchy at the moment.
+:::
+
 ## Too long; didn't read
 
 I want to know how modern games draw flashy 3D world on my screen. I want to learn 3D Graphics. I know how to program but that's it.

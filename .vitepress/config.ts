@@ -46,6 +46,7 @@ import { getSidebar } from 'vitepress-plugin-auto-sidebar';
 export default defineConfig({
   title: '3D Graphics Beginner Tutorials and Projects',
   description: '',
+  base: '/3d-graphics-beginner-projects/',
   themeConfig: {
     sidebar: getSidebar({
       contentRoot: '/',

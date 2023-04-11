@@ -83,7 +83,6 @@ Computer vision (CV as you might have heard), is to find ways to build program t
 Today more graphics research are hybriding the vision and AI stuff. TODO: stay tunned
 :::
 
-<!-- ![](https://www.adriancourreges.com/img/blog/2015/gtav/a/00_final_frame.jpg) -->
 
 <ImgCaption src='https://www.adriancourreges.com/img/blog/2015/gtav/a/00_final_frame.jpg'>
 A rendered image from the Game Grand Theft Auto 5 from an <a href='https://www.adriancourreges.com/blog/2015/11/02/gta-v-graphics-study/'>article</a> by Adrian Courrèges. You might find it very interesting after you learn some 3D graphics
@@ -107,7 +106,7 @@ v -0.737070 -0.000000 0.797186
 v -0.612160 -0.000000 0.797185
 ```
 
-<ImgCaption src='/assets/img/blender-wireframe.jpg'>
+<ImgCaption src='/img/blender-wireframe.jpg'>
 A screenshot from <a href='https://www.blender.org/'>Blender</a>. You can see the wireframe of the character model indicates it's built by triangles and quads (2 triangles). Modeling tools like this allows artists to design interactively and then export as model files to be consumed by programs.
 </ImgCaption>
 
@@ -189,15 +188,15 @@ However, people observed that the 3D graphics problems have some common traits:
 
 So people started design specialized hardware that are good at handling these tasks ~1990s. And named it the graphics process unit (GPU). Nowadays, GPU consists...
 
-<ImgCaption src='/assets/img/cpu-gpu-architecture.png'>
+<ImgCaption src='/img/cpu-gpu-architecture.png'>
 Simplified CPU and GPU architecture from
-<a href='https://docs.nvidia.com/cuda/cuda-c-programming-guide/'>here</a>
+<a href='https://docs.nvidia.com/cuda/cuda-c-programming-guide/'>Nvidia CUDA programming guide</a>
 </ImgCaption>
 
 
-<ImgCaption src='/assets/img/graphics-pipeline.svg'>
+<ImgCaption src='/img/graphics-pipeline.svg'>
 Simplified GPU graphics pipeline from
-<a href='https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction'>here</a>
+<a href='https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction'>Vulkan Tutorial</a>
 </ImgCaption>
 
 
@@ -226,3 +225,5 @@ Applications of computer graphics today: ~~No, what I want to ask is what job ca
   - Animations
   - Design/Simulation
   - GUI
+
+TODO: introduce apps using graphics API. (GUI - windows blurry effect: blending equation in API)

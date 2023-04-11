@@ -1,4 +1,4 @@
-// Author: @toji
+// Modified based on
 // https://github.com/toji/webgpu-gltf-case-study/blob/main/samples/js/tiny-gltf.js
 
 /**

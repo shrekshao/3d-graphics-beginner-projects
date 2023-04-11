@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { withBase } from 'vitepress';
+
 defineProps<{
   src: string;
 }>();
@@ -6,7 +8,7 @@ defineProps<{
 
 <template>
   <figure>
-    <img :src="src" />
+    <img :src="withBase(src)" />
     <figcaption
       style="
         text-align: center;

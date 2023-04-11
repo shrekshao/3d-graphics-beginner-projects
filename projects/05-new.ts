@@ -8,17 +8,16 @@ import skinnedMeshParticleWGSL from '../src/shaders/05/write-position-to-texture
 import particleWGSL from '../src/shaders/05/particle.wgsl';
 
 // import { TinyGltfWebGpu } from '../src/utils/tiny-gltf';
-import { TinyGltf, AABB } from '../src/utils/tiny-gltf';
-import OrbitCamera from '../src/utils/orbitCamera';
+// import { TinyGltf, AABB } from '../src/utils/tiny-gltf';
+// import OrbitCamera from '../src/utils/orbitCamera';
 import { vec3, vec4, quat, mat4 } from 'gl-matrix';
 import { assert } from '../src/utils/util';
+// import OrbitCamera from '../src/utils/orbitCamera';
 
-// const gltfUrl = '../assets/gltf/Buggy.glb';
-// const gltfUrl = '../assets/gltf/di-player-test.glb';
-// const gltfUrl = '../assets/gltf/di-player-test-hair-rig.glb';
-// const gltfUrl = '../assets/gltf/di-player-test-hair-rig-uv-particle.glb';
-const gltfUrl = '../assets/gltf/di-long-idle.glb';
-// const gltfUrl = '../assets/gltf/DamagedHelmet.glb';
+
+import { withBase } from 'vitepress';
+
+const gltfUrl = withBase('/gltf/di-long-idle.glb');
 
 // // Shader locations and source are unchanged from the previous sample.
 // const ShaderLocations = {
@@ -49,6 +48,10 @@ const Type2NumOfComponent = {
 // class DrawObject
 
 export async function init(context: GPUCanvasContext, device: GPUDevice) {
+  // hacky workaround for vitepress build
+  const OrbitCamera = (await import('../src/utils/orbitCamera')).default;
+  const {TinyGltf, AABB} = await import('../src/utils/tiny-gltf');
+
   // console.log(device);
   interface StaticMeshDrawObject {
     // setVertexBuffer
@@ -182,6 +185,7 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
+  assert(context.canvas instanceof HTMLCanvasElement);
   const camera = new OrbitCamera(context.canvas);
 
   const loader = new TinyGltf();

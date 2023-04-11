@@ -1,3 +1,6 @@
+// Modified based on
+// https://github.com/toji/webgpu-gltf-case-study/blob/main/samples/js/tiny-webgpu-demo.js
+
 import { vec3, mat4 } from 'gl-matrix';
 
 export default class OrbitCamera {
@@ -15,7 +18,7 @@ export default class OrbitCamera {
   distanceStep = 0.005;
   constrainDistance = true;
 
-  #distance = vec3.create([0, 0, 5]);
+  #distance = vec3.create();
   #target = vec3.create();
   #viewMat = mat4.create();
   #cameraMat = mat4.create();
@@ -25,7 +28,7 @@ export default class OrbitCamera {
   #element;
   #registerElement;
 
-  constructor(element = null) {
+  constructor(element: HTMLCanvasElement) {
     let moving = false;
     let lastX, lastY;
 
@@ -39,11 +42,12 @@ export default class OrbitCamera {
     const moveCallback = (event) => {
       let xDelta, yDelta;
 
-      if(document.pointerLockEnabled) {
-          xDelta = event.movementX;
-          yDelta = event.movementY;
-          this.orbit(xDelta * 0.025, yDelta * 0.025);
-      } else if (moving) {
+      // if(document.pointerLockEnabled) {
+      //     xDelta = event.movementX;
+      //     yDelta = event.movementY;
+      //     this.orbit(xDelta * 0.025, yDelta * 0.025);
+      // } else if (moving) {
+      if (moving) {
           xDelta = event.pageX - lastX;
           yDelta = event.pageY - lastY;
           lastX = event.pageX;
