@@ -1,19 +1,11 @@
----
-# layout: home
+# Modern 3D Graphics Beginner Tutorials and Projects in WebGPU
 
-title: Modern 3D Graphics Beginner Tutorials and Projects in WebGPU
+⚠️ Construction zone.
 
----
-
-# Modern 3D Graphics Beginner Projects in WebGPU
-
-## Too long; didn't read
-
-I want to know how modern games draw flashy 3D world on my screen. I want to learn 3D Graphics. I know how to program but that's it.
-
-Then you are ready to go. Shut up and start learning and coding now! [Lesson 0 Intro](lessons/00-intro.md).
-
-## More descriptions about this "course"
+As of 2023/04/11, parts that are ready:
+  - index.md
+  - 00-intro.md (mostly)
+  - A skinned mesh renderer and particle sim based on skinned animation (uncleaned code)
 
 **This is:**
   - A series of lessons and precanned projects for a 3D graphics new comer
@@ -24,19 +16,26 @@ Then you are ready to go. Shut up and start learning and coding now! [Lesson 0 I
 
 **This is for:**
   - People want to learn *real* modern and practical graphics knowledge used by the industry.
-    ::: warning OpenGL based lessons
+
+    ``` 
+    OpenGL based lessons
+
     Some "modern" graphics learning projects still use OpenGL. Yes they are modern by the time they came out, but not anymore. OpenGL is an API first launched in 1992. Even its latest version 4.6 was released in 2017. Support for OpenGL on Mac is deprecated by Apple in 2018. The next-gen (well actually cur-gen) API like Vulkan and Metal came out around 2015.
 
     And it is 2023 now...
-    :::
+    ```
 
-    ::: warning non-GPU based lessons
+    ``` 
+    non-GPU based lessons
+
     Projects from university courses are often based on some GUI framework (Qt) and ask you to write CPU only code (i.e. no shaders). While one can argue that you can learn the algorithm by writing CPU code without using any GPU API, to me it feels like you want to learn computer programming in 2023 but chooses to start with Pascal. Just like that almost no software today you are familiar with is built by Pascal, no games/engines/design tool that you are familiar with is built without using GPU API.
-    :::
+    ```
 
-    ::: tip Modern features missing in WebGPU
+    ``` 
+    Modern features missing in WebGPU
+    
     Being a cross-platform and web graphics API that just come out, WebGPU isn't *that* modern. Features like native ray tracing API, mesh shader, multi-queue etc. are not available in WebGPU, yet. As a beginner you don't have to worry about these.
-    :::
+    ```
   - People prefer to learn in a project-driven way (like me, as I usually become absent minded during lectures)
   - People already know how to program, in **any** mainstream programming language. (C/C++, Java, C#, Python, Javascript, Typescript etc.) And that's the only prerequisite needed.
   - People want to feel ease move on to real-world scenarios after this course.
