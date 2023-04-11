@@ -134,7 +134,7 @@ At this step we've turned *"the description of objects"* into just *data*. Compu
 
 Okay, we've got vehicles, characters, houses, etc. But look at the GTA image, how do we put them together? I do tell that "I want to take this shot at that angle"?
 
-Short answer is: math. Some basic usage of matrix math. We will learn the details in [Lesson 01 Matrix Maths](../lessons/01-matrix-math)
+Short answer is: math. Some basic linear algebra. We will learn the details in [Lesson 01 Matrix Maths](../lessons/01-matrix-math)
 
 But to give you an intuitive understanding of how it work, let's try go back to our earlier attempt of drawing shapes on a canvas. What if you are trying to build a 2D scrolling platformer game? Yes we have the canvas, the coordinate of the character and the background image. You might have already done the coordinate transform without noticing it.
 
@@ -153,20 +153,27 @@ TODO: projections
 
 ## How to draw the triangles with their vertices coordinate?
 
-What you do in your 2D draw program is actually called "rasterization".
-TODO: rasterize
+What you do in your 2D draw program is actually called "rasterization". It is the process of taking vector graphics input (the vertices coordinate of the shapes) into a series of pixels.
+
+In your earlier programming effort of draw a rect, you might find "rasterizing" an axis-aligned rectangle is pretty straight-forward. To rasterize an arbitrary triangle there needs to be a bit more work. Usually we need to get the equation representation of the three edges and then we are able to tell if a pixel lies inside or outside of the triangle given its coordinate. You will learn more at [Lesson 02 Ray trace and rasterize](../lessons/02-ray-trace-and-rasterize).
+
+Because the process of rasterizing shapes into pixels is so commonly used, it is integrated in the GPU hardware.
+
+There are many other details involved in the rasterizing step to get a nice clean image. For example antialiasing is not a trivial task at all. And people have developed many different approaches for various scenarios and different performance cost. You will learn more about antialiasing at [Lesson 05 Prettier](../lessons/05-prettier).
+
+<ImgCaption src='https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Line_pixel_subpixel_aa.gif/220px-Line_pixel_subpixel_aa.gif'>
+A gif gives you an idea of what is anti-aliasing from <a href='https://en.wikipedia.org/wiki/Rasterisation'>wikipedia</a>
+</ImgCaption>
 
 Rasterization isn't the only way to turn your triangle vertices numbers into pixels. Another widely used technicque is called Ray tracing.
 
-TODO: Ray trace.
-
-TODO: Ray march, SDF etc.
+TODO: Ray trace, Ray march, SDF etc.
 
 ## How do we decide the colors of these triangles?
 
-TODO: shading
+Once we have the pixels, we need to decide what color we should give to each pixel. A blue rectangle isn't uniformmally blue under certain lighting settings, it can be lit as bright blue, shaded as grey, or, reflecting the enviornment background. This step is called "shading". And that's actually a very big research topic in computer graphics. A lot of computation is needed here, usually starts with calculating the surface distance to the light, the normal vector of the surface, and the properties of the surface material. More will be introduced in [Lesson 05 Prettier](../lessons/05-prettier).
 
-The step is called "shading". And that's actually a very big research topic in computer graphics.
+TODO: shading
 
 ## Looks fine, but what is GPU doing here?
 
