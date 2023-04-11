@@ -785,7 +785,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     code: basicFragmentWGSL,
   });
 
-
   const staticMeshVertexBufferLayout: GPUVertexBufferLayout[] = [
     {
       arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
@@ -883,7 +882,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     },
   ];
 
-
   const skinnedMeshPipeline = device.createRenderPipeline({
     label: 'Skinned Mesh',
     layout: device.createPipelineLayout({
@@ -925,55 +923,52 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     },
   });
 
-  const skinnedMeshWriteParticlePositionTextureModule = device.createShaderModule({
-    code: skinnedMeshParticleWGSL,
-  });
+  const skinnedMeshWriteParticlePositionTextureModule =
+    device.createShaderModule({
+      code: skinnedMeshParticleWGSL,
+    });
 
-  const skinnedMeshWriteParticlePositionTexturePipeline = device.createRenderPipeline({
-    label: 'Skinned Mesh Write Particle Position',
-    layout: device.createPipelineLayout({
+  const skinnedMeshWriteParticlePositionTexturePipeline =
+    device.createRenderPipeline({
       label: 'Skinned Mesh Write Particle Position',
-      bindGroupLayouts: [
-        frameBindGroupLayout,
-        staticStorageBindGroupLayout,
-        skinBindGroupLayout,
-      ],
-    }),
-    vertex: {
-      module: skinnedMeshWriteParticlePositionTextureModule,
-      entryPoint: 'vertexMain',
-      buffers: skinnedMeshVertexBufferLayout,
-    },
-    primitive: {
-      topology: 'triangle-list',
-      cullMode: 'none',
-      // cullMode: 'back',
-    },
-    multisample: {
-      count: 1,
-    },
-    depthStencil: {
-      format: 'depth24plus',
-      depthWriteEnabled: true,
-      depthCompare: 'less',
-    },
-    fragment: {
-      module: skinnedMeshWriteParticlePositionTextureModule,
-      entryPoint: 'fragmentMain',
-      targets: [
-        {
-          // TODO: use float32
-          // format: presentationFormat,
-          format: positionTextureFormat,
-        },
-      ],
-    },
-  });
-
-
-
-
-
+      layout: device.createPipelineLayout({
+        label: 'Skinned Mesh Write Particle Position',
+        bindGroupLayouts: [
+          frameBindGroupLayout,
+          staticStorageBindGroupLayout,
+          skinBindGroupLayout,
+        ],
+      }),
+      vertex: {
+        module: skinnedMeshWriteParticlePositionTextureModule,
+        entryPoint: 'vertexMain',
+        buffers: skinnedMeshVertexBufferLayout,
+      },
+      primitive: {
+        topology: 'triangle-list',
+        cullMode: 'none',
+        // cullMode: 'back',
+      },
+      multisample: {
+        count: 1,
+      },
+      depthStencil: {
+        format: 'depth24plus',
+        depthWriteEnabled: true,
+        depthCompare: 'less',
+      },
+      fragment: {
+        module: skinnedMeshWriteParticlePositionTextureModule,
+        entryPoint: 'fragmentMain',
+        targets: [
+          {
+            // TODO: use float32
+            // format: presentationFormat,
+            format: positionTextureFormat,
+          },
+        ],
+      },
+    });
 
   // Particle stuff
 
@@ -991,7 +986,8 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
   const particlesBuffer = device.createBuffer({
     size: numParticles * particleInstanceByteSize,
     // usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    usage:
+      GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 
     mappedAtCreation: true,
   });
@@ -999,23 +995,24 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
   // TEMP: test particlesBuffer
   // let tempParticlePositions = new Float32Array([1.8367099231598242e-40, 5.605193857299268e-45, 4.5918308598381336e-40, 5.510157795448759e-40, 1.8368360400216135e-40, 3.673545963181438e-40, 8.265250706157782e-40, 3.673573989150724e-40, 1.1938768643369933e-39, 3.673489911242865e-40, 4.591956976699923e-40, 1.3775506592499044e-39, 1.56123566455053e-39, 2.112247240200013e-39, 2.2040827363580042e-39, 2.3877579325693796e-39, 2.295925239008317e-39, 2.5714317274822907e-39, 2.2959140286206025e-39, 1.744913663358834e-39, 1.8367491595168253e-39, 2.7551055223952018e-39, 2.6632728288341392e-39, 2.938779317308113e-39, 2.6632658223418176e-39, 2.38776774165863e-39, 2.479603237816621e-39, 3.122453112221024e-39, 3.0306204186599614e-39, 3.306126907133935e-39, 3.03062322125689e-39, 3.3979638045903905e-39, 3.489799300748382e-39, 2.0204145466389504e-39, 2.204056111687182e-39, 9.183970005338419e-41, 3.214292812274408e-39, 3.306135314924721e-39, 3.9489837880306594e-39, 1.9285762478840306e-39, 2.0203921258635213e-39, 2.7551769886168823e-40, 2.5714219183930404e-39, 1.8367239361444675e-39, 6.428624860905817e-40, 2.4795976326227638e-39, 2.5714107080053258e-39, 9.18371777161484e-40, 2.9387737121142555e-39, 2.4795780144442633e-39, 1.1020455720743951e-39, 2.846945222448586e-39, 2.938758297831148e-39, 1.2857193669873062e-39, 3.306131111029328e-39, 3.489809109837632e-39, 4.1326575829435705e-39, 2.1122710622739065e-39, 3.581631994309444e-39, 3.030619017361497e-39, 2.2040841376564685e-39, 2.1122654570800492e-39, 3.1224559148179526e-39, 3.581626389115587e-39, 2.755111127589059e-39, 3.3979596006949975e-39, 2.7551083249921304e-39, 2.8469522289409076e-39, 3.489800702046846e-39, 9.1869127321135e-41, 2.2041093610288264e-39, 3.21429981876673e-39, 4.5917748078995606e-40, 5.885453550164232e-44, 3.67347870085515e-39, 1.3775394488621898e-39, 4.5923913792238635e-40, 3.857152495768061e-39, 2.8469228016731568e-39, 1.4694211878695037e-39, 4.132650576451249e-39, 4.408168275312937e-39, 4.2245014868923476e-39, 4.5918434715243125e-39, 4.5000093766647856e-39, 4.5918476754197055e-39, 4.95918966005167e-39, 5.234691944630251e-39, 4.5000219883509645e-39, 4.775528476824938e-39, 5.6020325279637515e-39, 4.4081836895960447e-39, 4.500019185754036e-39, 5.87756003591469e-39, 5.7857273423536274e-39, 6.153069326985592e-39, 6.428581420653423e-39, 6.33673891800311e-39, 5.785725941055163e-39, 6.612255215566334e-39]);
 
-
-
-
   // const particlesBuffer = device.createBuffer({
   //   size: numParticles * particleInstanceByteSize,
   //   usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
   //   // usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   //   mappedAtCreation: true,
-  // });  
-  let tempParticlePositions = new Float32Array(particlesBuffer.getMappedRange());
+  // });
+  const tempParticlePositions = new Float32Array(
+    particlesBuffer.getMappedRange()
+  );
   const aabbExtent = vec3.create();
   vec3.subtract(aabbExtent, sceneAabb.max, sceneAabb.min);
   for (let i = 0; i < numParticles; i++) {
-    const o = i * particleInstanceByteSize / 4;
+    const o = (i * particleInstanceByteSize) / 4;
     tempParticlePositions[o] = Math.random() * aabbExtent[0] + sceneAabb.min[0];
-    tempParticlePositions[o + 1] = Math.random() * aabbExtent[1] + sceneAabb.min[1];
-    tempParticlePositions[o + 2] = Math.random() * aabbExtent[2] + sceneAabb.min[2];
+    tempParticlePositions[o + 1] =
+      Math.random() * aabbExtent[1] + sceneAabb.min[1];
+    tempParticlePositions[o + 2] =
+      Math.random() * aabbExtent[2] + sceneAabb.min[2];
 
     // velocity
     tempParticlePositions[o + 9] = 0;
@@ -1024,9 +1021,8 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
   }
   // console.log(tempParticlePositions);
   particlesBuffer.unmap();
-  
-  // device.queue.writeBuffer(particlesBuffer, 0, tempParticlePositions);
 
+  // device.queue.writeBuffer(particlesBuffer, 0, tempParticlePositions);
 
   const particleComputePipeline = device.createComputePipeline({
     layout: 'auto',
@@ -1109,8 +1105,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
   //   new Float32Array(vertexData),
   // );
 
-
-
   const particleRenderPipeline = device.createRenderPipeline({
     label: 'Particle render pipeline',
     layout: device.createPipelineLayout({
@@ -1191,17 +1185,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     //   format: 'depth24plus',
     // },
   });
-
-
-
-
-
-
-
-
-
-
-
 
   // upload gltf models buffer to renderer buffer, and process draw info
   let prevTime = performance.now() * 0.001;
@@ -1320,8 +1303,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
 
     passEncoder.end();
 
-
-
     // Particle simulation
     {
       const passEncoder = commandEncoder.beginComputePass();
@@ -1344,13 +1325,15 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
         ],
         // depthStencilAttachment: {
         //   view: depthTexture.createView(),
-  
+
         //   depthClearValue: 1.0,
         //   depthLoadOp: 'clear',
         //   depthStoreOp: 'store',
         // },
       };
-      const passEncoder = commandEncoder.beginRenderPass(particleRenderPassDescriptor);
+      const passEncoder = commandEncoder.beginRenderPass(
+        particleRenderPassDescriptor
+      );
       passEncoder.setPipeline(particleRenderPipeline);
       passEncoder.setBindGroup(0, frameBindGroup);
       passEncoder.setVertexBuffer(0, particlesBuffer);
@@ -1358,11 +1341,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
       passEncoder.draw(6, numParticles, 0, 0);
       passEncoder.end();
     }
-
-
-
-
-
 
     device.queue.submit([commandEncoder.finish()]);
     requestAnimationFrame(frame);

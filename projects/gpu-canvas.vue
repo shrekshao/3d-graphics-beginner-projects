@@ -29,5 +29,5 @@ onMounted(async () => {
 </script>
 
 <template>
-  <canvas :width='width ?? 600' :height='height ?? 600' />
+  <canvas :width="width ?? 600" :height="height ?? 600" />
 </template>
