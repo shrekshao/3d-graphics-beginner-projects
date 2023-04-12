@@ -44,7 +44,7 @@ const Type2NumOfComponent = {
 
 export async function init(context: GPUCanvasContext, device: GPUDevice) {
   const OrbitCamera = (await import('../src/utils/orbitCamera')).default;
-  const {TinyGltf, AABB} = await import('../src/utils/tiny-gltf');
+  const { TinyGltf, AABB } = await import('../src/utils/tiny-gltf');
   // console.log(device);
   interface StaticMeshDrawObject {
     // setVertexBuffer

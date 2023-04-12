@@ -48,6 +48,9 @@ export default defineConfig({
   description: '',
   base: '/3d-graphics-beginner-projects/',
   themeConfig: {
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/shrekshao/3d-graphics-beginner-projects' }
+    ],
     sidebar: getSidebar({
       contentRoot: '/',
       contentDirs: ['lessons', 'projects'],

@@ -48,11 +48,11 @@ export default class OrbitCamera {
       //     this.orbit(xDelta * 0.025, yDelta * 0.025);
       // } else if (moving) {
       if (moving) {
-          xDelta = event.pageX - lastX;
-          yDelta = event.pageY - lastY;
-          lastX = event.pageX;
-          lastY = event.pageY;
-          this.orbit(xDelta * 0.025, yDelta * 0.025);
+        xDelta = event.pageX - lastX;
+        yDelta = event.pageY - lastY;
+        lastX = event.pageX;
+        lastY = event.pageY;
+        this.orbit(xDelta * 0.025, yDelta * 0.025);
       }
     };
     const upCallback = (event) => {
@@ -61,7 +61,8 @@ export default class OrbitCamera {
       }
     };
     const wheelCallback = (event) => {
-      this.distance = this.#distance[2] + (-event.wheelDeltaY * this.distanceStep);
+      this.distance =
+        this.#distance[2] + -event.wheelDeltaY * this.distanceStep;
       event.preventDefault();
     };
 
@@ -80,7 +81,7 @@ export default class OrbitCamera {
         this.#element.addEventListener('pointerup', upCallback);
         this.#element.addEventListener('mousewheel', wheelCallback);
       }
-    }
+    };
 
     this.#element = element;
     this.#registerElement(element);
@@ -95,29 +96,35 @@ export default class OrbitCamera {
   }
 
   orbit(xDelta, yDelta) {
-    if(xDelta || yDelta) {
+    if (xDelta || yDelta) {
       this.orbitY += xDelta;
-      if(this.constrainYOrbit) {
-          this.orbitY = Math.min(Math.max(this.orbitY, this.minOrbitY), this.maxOrbitY);
+      if (this.constrainYOrbit) {
+        this.orbitY = Math.min(
+          Math.max(this.orbitY, this.minOrbitY),
+          this.maxOrbitY
+        );
       } else {
-          while (this.orbitY < -Math.PI) {
-              this.orbitY += Math.PI * 2;
-          }
-          while (this.orbitY >= Math.PI) {
-              this.orbitY -= Math.PI * 2;
-          }
+        while (this.orbitY < -Math.PI) {
+          this.orbitY += Math.PI * 2;
+        }
+        while (this.orbitY >= Math.PI) {
+          this.orbitY -= Math.PI * 2;
+        }
       }
 
       this.orbitX += yDelta;
-      if(this.constrainXOrbit) {
-          this.orbitX = Math.min(Math.max(this.orbitX, this.minOrbitX), this.maxOrbitX);
+      if (this.constrainXOrbit) {
+        this.orbitX = Math.min(
+          Math.max(this.orbitX, this.minOrbitX),
+          this.maxOrbitX
+        );
       } else {
-          while (this.orbitX < -Math.PI) {
-              this.orbitX += Math.PI * 2;
-          }
-          while (this.orbitX >= Math.PI) {
-              this.orbitX -= Math.PI * 2;
-          }
+        while (this.orbitX < -Math.PI) {
+          this.orbitX += Math.PI * 2;
+        }
+        while (this.orbitX >= Math.PI) {
+          this.orbitX -= Math.PI * 2;
+        }
       }
 
       this.#dirty = true;
@@ -133,23 +140,26 @@ export default class OrbitCamera {
     this.#target[1] = value[1];
     this.#target[2] = value[2];
     this.#dirty = true;
-  };
+  }
 
   get distance() {
     return -this.#distance[2];
-  };
+  }
 
   set distance(value) {
     this.#distance[2] = value;
-    if(this.constrainDistance) {
-      this.#distance[2] = Math.min(Math.max(this.#distance[2], this.minDistance), this.maxDistance);
+    if (this.constrainDistance) {
+      this.#distance[2] = Math.min(
+        Math.max(this.#distance[2], this.minDistance),
+        this.maxDistance
+      );
     }
     this.#dirty = true;
-  };
+  }
 
   #updateMatrices() {
     if (this.#dirty) {
-      var mv = this.#cameraMat;
+      const mv = this.#cameraMat;
       mat4.identity(mv);
 
       mat4.translate(mv, mv, this.#target);
