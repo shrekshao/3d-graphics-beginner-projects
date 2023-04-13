@@ -141,12 +141,11 @@ But to give you an intuitive understanding of how it work, let's try go back to 
 What will you do when the character is moving towards the right edge of the screen/viewport? To track the character, intuitively we are very likely writing code to move the background image leftwards. Although the background(world) doesn't actually move, by doing so, the relative position of the character and the background. We are implicitly applying a transform of the background(world) to the coordinate system of the screen/viewport/camera.
 </ImgCaption>
 
+There's one more step of "magical" coordinate transform: projection, which slaps all vertices scattered in the 3D space to a 2D plane, which is our canvas/screen/viewport.
 
-
-
-TODO: projections
-
-
+<ImgCaption src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Axonometric_projection.svg/150px-Axonometric_projection.svg.png'>
+Source: <a href='https://en.wikipedia.org/wiki/3D_projection'>Wikipedia</a>
+</ImgCaption>
 
 
 
@@ -164,15 +163,21 @@ There are many other details involved in the rasterizing step to get a nice clea
 A gif gives you an idea of what is anti-aliasing from <a href='https://en.wikipedia.org/wiki/Rasterisation'>wikipedia</a>
 </ImgCaption>
 
-Rasterization isn't the only way to turn your triangle vertices numbers into pixels. Another widely used technicque is called Ray tracing.
+Rasterization isn't the only way to turn your triangle vertices numbers into pixels. Another widely used technicque is called Ray tracing. Also there are cases where triangle isn't the best choice to represent the object, for example, fog, dust, or morph shapes, people have developed many differrent techniques to "calculate" their shapes.
 
-TODO: Ray trace, Ray march, SDF etc.
+<ImgCaption src='/img/shadertoy.jpg'>
+<a href='https://www.shadertoy.com/'>Shadertoy</a> is a website consists of many shader experiment. Usually ray marching is used to render the scene. The object are usually represented by some surface equation instead of vertices data.
+</ImgCaption>
 
 ## How do we decide the colors of these triangles?
 
 Once we have the pixels, we need to decide what color we should give to each pixel. A blue rectangle isn't uniformmally blue under certain lighting settings, it can be lit as bright blue, shaded as grey, or, reflecting the enviornment background. This step is called "shading". And that's actually a very big research topic in computer graphics. A lot of computation is needed here, usually starts with calculating the surface distance to the light, the normal vector of the surface, and the properties of the surface material. More will be introduced in [Lesson 05 Prettier](../lessons/05-prettier).
 
-TODO: shading
+Physically based rendering, which models after how the real world light photon lits the object, is widely used by mainstream engines starting ~2012. Since then, realistic rendering is not done by tricks anymore but can be achieved by expecting a set of well-formed assets providing material features capturing real-world physical features, like metalness, roughness.
+
+<ImgCaption src='https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/MetalRoughSpheres/screenshot/screenshot.png'>
+A glTF model testing physically based material properties.
+</ImgCaption>
 
 ## Looks fine, but what is GPU doing here?
 
@@ -186,7 +191,7 @@ However, people observed that the 3D graphics problems have some common traits:
   - The computation process for each triangle/pixel is mostly the same, and fixed, for any 3D games/apps. And actually pretty simple -- it's just floating point number computations -- compared to the different,  flexible, and complicated CPU program logic.
   - Computation of each triangle/pixel is **parrallel** to each other, there's little dependency. i.e. one pixel doesn't need to wait for result of another pixel to finish its computation.
 
-So people started design specialized hardware that are good at handling these tasks ~1990s. And named it the graphics process unit (GPU). Nowadays, GPU consists...
+So people started design specialized hardware that are good at handling these tasks ~1990s. And named it the graphics process unit (GPU). Nowadays, GPU consists of smaller cores and memory caches compared to CPU. But there are many of them, which means they can handle many parrallel tasks at once.
 
 <ImgCaption src='/img/cpu-gpu-architecture.png'>
 Simplified CPU and GPU architecture from
@@ -227,3 +232,5 @@ Applications of computer graphics today: ~~No, what I want to ask is what job ca
   - GUI
 
 TODO: introduce apps using graphics API. (GUI - windows blurry effect: blending equation in API)
+
+TODO: introduce 
