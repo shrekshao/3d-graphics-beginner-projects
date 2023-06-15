@@ -1,5 +1,3 @@
-// import triangleVertWGSL from '../src/shaders/triangle.vert.wgsl';
-// import fragWGSL from '../src/shaders/red.frag.wgsl';
 import staticMeshVertexWGSL from '../src/shaders/05/static-mesh.vert.wgsl';
 import skinnedMeshVertexWGSL from '../src/shaders/05/skinned.vert.wgsl';
 import basicFragmentWGSL from '../src/shaders/05/basic.frag.wgsl';
@@ -9,20 +7,8 @@ import basicFragmentWGSL from '../src/shaders/05/basic.frag.wgsl';
 import { vec3, vec4, quat, mat4 } from 'gl-matrix';
 
 import { withBase } from 'vitepress';
-// const gltfUrl = '/gltf/Buggy.glb';
-// const gltfUrl = '/gltf/di-player-test.glb';
 const gltfUrl = withBase('/gltf/di-player-test-hair-rig.glb');
 // const gltfUrl = '/gltf/DamagedHelmet.glb';
-
-// Shader locations and source are unchanged from the previous sample.
-const ShaderLocations = {
-  POSITION: 0,
-  NORMAL: 1,
-  TEXCOORD_0: 2,
-
-  JOINTS_0: 3,
-  WEIGHTS_0: 4,
-};
 
 const Type2NumOfComponent = {
   SCALAR: 1,
@@ -34,22 +20,11 @@ const Type2NumOfComponent = {
   MAT4: 16,
 };
 
-// function getPipelineArgs(primitive, buffers) {
-//   return {
-//     topology: TinyGltfWebGpu.gpuPrimitiveTopologyForMode(primitive.mode),
-//     buffers,
-//   };
-// }
-// class DrawObject
-
 export async function init(context: GPUCanvasContext, device: GPUDevice) {
   const OrbitCamera = (await import('../src/utils/orbitCamera')).default;
   const { TinyGltf, AABB } = await import('../src/utils/tiny-gltf');
   // console.log(device);
   interface StaticMeshDrawObject {
-    // setVertexBuffer
-    // vertexOffset: number;
-    // vertexSize: number;
 
     vertexBuffers: { offset: number; size: number }[];
 
@@ -106,7 +81,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
         label: 'Skin inverseBindMatricesStaticBuffer',
         size: bufferSize,
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-        // mappedAtCreation: true,
       });
 
       // for animated object transforms (joints)
@@ -114,7 +88,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
         label: 'Skin jointMatricesDynamicBuffer',
         size: bufferSize,
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-        // mappedAtCreation: true,
       });
 
       {
@@ -380,23 +353,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
       for (const c of animation.channels) {
         const nodeIdx = c.target.node;
 
-        // if (!(nodeIdx in skin.nodeIdx2JointIdx)) {
-        //   console.error('Unrelated animation target nodeIdx: ', nodeIdx);
-        // }
-
-        // let sampler: AnimationSampler;
-        // if (c.sampler in samplerIdx2Samplers) {
-        //   const s = animation.samplers[c.sampler];
-        //   sampler = {
-        //     input: new Float32Array(getGltfBufferByte(s.input).buffer),
-        //     output: new Float32Array(getGltfBufferByte(s.output).buffer),
-
-        //     idx: 0,
-        //   };
-        // } else {
-        //   sampler = samplerIdx2Samplers[c.sampler];
-        // }
-
         const s = animation.samplers[c.sampler];
         const sampler: AnimationSampler = {
           // input: new Float32Array(getGltfBufferByte(s.input).buffer),
@@ -481,8 +437,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
             s.idx = 0;
           }
 
-          // const v4lerp = s.outputCount === 4 ? quat.slerp : vec4.lerp;
-
           const i = s.idx;
           const o = i * s.outputCount;
           const on = o + s.outputCount;
@@ -564,12 +518,6 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
         gpuBufferSetup.curOffset
       );
 
-      // if (bufferView.byteLength === 92712) {
-      //   console.log(gpuBufferSetup.mapped);
-      // } else {
-      //   console.log(new Float32Array(gpuBufferSetup.mapped.buffer));
-      // }
-
       const offset = gpuBufferSetup.curOffset;
       gpuBufferSetup.curOffset += bufferView.byteLength;
       // console.log(gpuBufferSetup.curOffset);
@@ -582,11 +530,9 @@ export async function init(context: GPUCanvasContext, device: GPUDevice) {
     // const nodeIdx2SkinIdx: { [key: number]: number } = {};
 
     if (gltf.skins) {
-      // for (const skin of gltf.skins) {
-      for (const [idx, skin] of gltf.skins.entries()) {
-        // uploadToBuffer();
+      for (const skin of gltf.skins) {
+      // for (const [idx, skin] of gltf.skins.entries()) {
         skinObjects.push(new SkinObject(gltf, skin));
-        // console.log(skinObjects[skinObjects.length - 1]);
       }
 
       // temp, striking animation
