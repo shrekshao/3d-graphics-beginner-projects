@@ -179,6 +179,8 @@ Physically based rendering, which models after how the real world light photon l
 A glTF model testing physically based material properties.
 </ImgCaption>
 
+TODO: extend more: introduce common technique, shaders to draw objects. (reference: https://lettier.github.io/3d-game-shaders-for-beginners/index.html)
+
 ## Looks fine, but what is GPU doing here?
 
 At this point, you may wonder: hey, I pretty much understand all the above process, and I can't wait to write some program to try implementing those. But that seems all doable with my existing knowledge writing a program. Where is GPU? Where are the things called shaders, Direct3D, OpenGL... Why are they so frequently mentioned when talking about 3D graphics? what roles do they play?
