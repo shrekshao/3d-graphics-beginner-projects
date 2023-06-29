@@ -1,5 +1,8 @@
 import { defineConfig } from 'vitepress';
 // import { getSidebar } from 'vitepress-plugin-auto-sidebar';
+import mathjax3 from 'markdown-it-mathjax3';
+
+const customElements = ['mjx-container'];
 
 import fs from "fs";
 import path from "path";
@@ -64,6 +67,18 @@ export default defineConfig({
   title: '3D Graphics Beginner Tutorials and Projects',
   description: '',
   base: '/3d-graphics-beginner-projects/',
+  markdown: {
+    config: (md) => {
+      md.use(mathjax3);
+    },
+  },
+  vue: {
+    template: {
+      compilerOptions: {
+        isCustomElement: (tag) => customElements.includes(tag),
+      },
+    },
+  },
   themeConfig: {
     socialLinks: [
       { icon: 'github', link: 'https://github.com/shrekshao/3d-graphics-beginner-projects' }
