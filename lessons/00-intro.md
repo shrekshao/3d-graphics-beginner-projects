@@ -63,6 +63,87 @@ const shapes: DrawObject[];
 // ...
 ```
 
+``` typescript
+// TEMP not working
+class DrawObject {
+  type: 'rect' | 'circle',
+  color: number[],
+  hitObject(x: number, y: number): bool { return false; };
+};
+
+class Rect extends DrawObject {
+  top: number,
+  bottom: number,
+  left: number,
+  right: number,
+  
+  constructor(top: number, bottom: number, left: number, right: number) {
+    super();
+    this.type = 'rect';
+    this.color = [0, 0, 255, 255];
+    
+  	this.top = top;
+    this.bottom = bottom;
+    this.left = left;
+    this.right = right;
+  }
+
+  hitObject(x: number, y: number): bool {
+  	return y >= top && y <= bottom && x >= left && x <= right;
+  }
+};
+
+class Circle extends DrawObject {
+  x: number,
+  y: number,
+  radius: number
+  
+  hitObject(x: number, y: number): bool {
+  	return y >= top && y <= bottom && x >= left && x <= right;
+  }
+};
+
+
+const c = document.createElement("canvas");
+/* const c = document.querySelector('#cc'); */
+c.width = 500;
+c.height = 500;
+document.body.appendChild(c);
+const ctx = c.getContext("2d");
+const imgData = ctx.createImageData(c.width, c.height);
+for (let x = 0; x < c.width; x++) {
+  for (let y = 0; y < c.height; y++) {
+    if (x <= 50 && y <= 50) {
+      const i = 4 * (x * c.height + y);
+      imgData.data[i + 0] = 255;
+      imgData.data[i + 1] = 0;
+      imgData.data[i + 2] = 0;
+      imgData.data[i + 3] = 255;
+    }
+  }
+}
+
+const objects = [
+  new Rect(20, 50, 80, 120),
+];
+
+for (let x = 0; x < c.width; x++) {
+  for (let y = 0; y < c.height; y++) {
+    const i = 4 * (x * c.height + y);
+    for (let obj of objects) {
+/*        if (obj.hitObject(x, y)) {
+        imgData.data[i + 0] = obj.color[0];
+        imgData.data[i + 1] = obj.color[1];
+        imgData.data[i + 2] = obj.color[2];
+        imgData.data[i + 3] = obj.color[3];
+             } */
+    }
+  }
+}
+
+ctx.putImageData(imgData, 0, 0);
+```
+
 Now our program can draw scenes like *"2 blue 10x10 rects whose top-left are at (1, 10) and (40, 30), 1 yellow circle at (70, 10) with radius=10"*.
 
 What if we want to draw a vehicle? How do we precisely describe a vehicle? Maybe a rect plus two circles as the wheels. Then what if we want to draw a human? What if we want to draw a house, a human, and a vehicle with some relative position? How do we describe that?
