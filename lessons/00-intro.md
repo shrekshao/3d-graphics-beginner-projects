@@ -37,7 +37,7 @@ ctx.putImageData(imgData, 0, 0);
 You should feel mostly comfortable reading this piece of program. If you are just not familiar with Typescript, you might find this helpful: [Tutorials for programmers from other languages](https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html)
 :::
 
-You probably already notice that the program hardcoded the scene description. You are absolutely right. We just manually interprete the natural language scene description and it's not extendable at all. What if our scene can be made of different rectangles and circles? Then we might think of the following datastructure to describe the scene instead of natural langugae.
+You probably already notice that the program hardcoded the scene description. You are absolutely right. We just manually interprete the natural language scene description and it's not extendable at all. What if our scene can be made of different rectangles and circles? Then we might think of the following data structure to describe the scene instead of natural langugae.
 
 ``` typescript
 class DrawObject {
