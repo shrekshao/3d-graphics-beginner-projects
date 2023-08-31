@@ -1,1 +1,0 @@
-import{_ as e,c as s,o as t}from"./chunks/framework.9695c624.js";const l=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"lessons/03-shading.md"}'),a={name:"lessons/03-shading.md"};function n(o,r,c,d,i,_){return t(),s("div")}const m=e(a,[["render",n]]);export{l as __pageData,m as default};

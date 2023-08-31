@@ -1,1 +1,0 @@
-import{_ as e,c as a,o as n,N as t}from"./chunks/framework.9695c624.js";const u=JSON.parse('{"title":"Animation","description":"","frontmatter":{},"headers":[],"relativePath":"lessons/04-animation.md"}'),i={name:"lessons/04-animation.md"},o=t("",5),r=[o];function s(l,c,p,_,d,h){return n(),a("div",null,r)}const k=e(i,[["render",s]]);export{u as __pageData,k as default};
