@@ -64,7 +64,7 @@ const locales = {
 };
 
 export default defineConfig({
-  title: '3D Graphics Beginner Tutorials and Projects',
+  title: '3D Graphics Beginner',
   description: '',
   base: '/3d-graphics-beginner-projects/',
   markdown: {

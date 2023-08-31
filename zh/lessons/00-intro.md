@@ -42,11 +42,14 @@ for (let x = 0; x < c.width; x++) {
 ctx.putImageData(imgData, 0, 0);
 ```
 
-::: tip Prerequsite
-You should feel mostly comfortable reading this piece of program. If you are just not familiar with Typescript, you might find this helpful: [Tutorials for programmers from other languages](https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html)
+::: tip 预备技能：熟悉编程语言
+
+你应该能够阅读和理解这段程序，以继续阅读后面的部分。如果你使用过其他编程语言而单纯对Typescript不熟悉，也许你可以看看这篇文章：[Tutorials for programmers from other languages](https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html)
 :::
 
-你大约已经发现了，上面这段程序把”场景描述“硬编码到了程序里。恭喜你你已经学会抢答了。这是因为我们只是人工地把自然语言下的“场景描述”写成了程序，它对其他的场景并没有可扩展性。如果我现在给我们之前的“场景描述”加上*“……，和一个蓝色的圆形位于画面的中央”*呢？为了解决这个问题，我们可能想到为我们的场景描述提供更多的数据结构。
+你大约已经发现了，上面这段程序把“场景描述”硬编码到了程序里。恭喜你你已经学会抢答了。这是因为我们只是人工地把自然语言下的“场景描述”写成了程序，它对其他的场景并没有可扩展性。如果我现在给我们之前的“场景描述”加上
+*"……，和一个蓝色的圆形位于画面的中央"*
+呢？为了解决这个问题，我们可能想到为我们的场景描述提供更多的数据结构。
 
 ``` typescript
 class DrawObject {
@@ -133,7 +136,14 @@ TODO：用三角形
 </ImgCaption>
 :::
 
-在之前的例子中，把一个给定圆心坐标额半径的2D圆形“光栅化”看起来很直接和简单。2D矩形如果和坐标轴对齐（Axis Aligned），也很简单。没对齐的矩形看起来就没那么直接了。对于“光栅化一个在3D空间中的任意三角形”这项任务，我们需要用到一些数学工具。
+在之前的例子中，把一个给定圆心坐标额半径的2D圆形“光栅化”看起来很直接和简单。2D矩形如果和坐标轴对齐（Axis Aligned），也很简单。没对齐的矩形看起来就没那么直接了。还有3D空间中的形状，比如旋转过了的，不正对着画布的三角形“面片”。
+
+对于这些任意摆放的形状，用计算机里分而治之的思想，我们会想到如果我们能把3D空间中任意的图形先处理成“对齐”画布的样子，再去找他们各自覆盖了的像素。我们需要用到一些数学工具来处理“光栅化一个在3D空间中的任意三角形”这项任务。
+
+<ImgCaption src='/img/matrix-pipeline.webp'>
+Vertex Stage里的每个矩阵变换经历的坐标系总览。图片来自
+<a href='https://olegvaraksin.medium.com/convert-world-to-screen-coordinates-and-vice-versa-in-webgl-c1d3f2868086'>这里</a>
+</ImgCaption>
 
 ### 数学：矩阵和变换
 
@@ -286,38 +296,127 @@ $$
 \boldsymbol{V} = \boldsymbol{T_v}\boldsymbol{R_v}
 $$
 
-### 投影变换：3D→2D的神奇一步
+### 投影变换和深度比较：3D→2D的神奇一步
 
 TODO：配view frustum example配图（动态？）
+<ImgCaption src='/img/gl_projectionmatrix01.png'>
+透视投影的视锥（View Frustum），和屏幕所处的标准坐标系（Normalized Device Coordinate）（这里是一个右手系的从-1到1的NDC。其他常用的NDC也有：左手系的从0到1） 图片来自
+<a href='https://www.songho.ca/opengl/gl_projectionmatrix.html'>OpenGL Projection Matrix</a>
+</ImgCaption>
 
-到此为止，我们的三角形的顶点坐标经过一些变换，依然处在3D空间内。如何把他们投影到2D的像素平面上，并且符合透视规则，看起来就像一幅画一样呢？
+到此为止，我们的三角形的顶点坐标经过一些变换，依然处在3D空间内。
+现在我们需要把他们从3D空间投影到2D的像素平面上——比如一个原点在画面左下角的坐标系，长宽单位分别对应。我们使用投影矩阵（Projection Matrix）来进行这个坐标变换。它的性质和之前的缩放，旋转，平移矩阵稍有不同（不是仿射矩阵）
 
-其实还是通过矩阵来进行坐标变换。这个矩阵叫做投影矩阵。它的性质和之前的缩放，旋转，平移矩阵稍有不同（不是仿射矩阵）
+投影矩阵具有这样的形式
+
+$$
+\boldsymbol{P} = {\left(
+\begin{array}{lcr}
+      m_{00} & 0 & 0 & 0 \\
+      0 & m_{11} & 0 & 0 \\
+      0 & 0 & m_{22} & m_{23} \\
+      0 & 0 & -1 & 0
+\end{array}
+\right)}
+$$
+
+矩阵里非零的m_{ij}由投影相关的参数：如视锥远、近平面距离，视锥角度（Field of view）等导出得到。投影矩阵的重点在于最后一列。我们把它乘上一个向量展开：
+
+$$
+\begin{align*}
+p' &= \boldsymbol{P}p \\
+&= {\left(
+\begin{array}{lcr}
+      m_{00} & 0 & 0 & 0 \\
+      0 & m_{11} & 0 & 0 \\
+      0 & 0 & m_{22} & m_{23} \\
+      0 & 0 & -1 & 0
+\end{array}
+\right)}
+{\left(
+\begin{array}{lcr}
+      x \\
+      y \\
+      z \\
+      1
+\end{array}
+\right)} \\
+&= {\left(
+\begin{array}{lcr}
+      m_{00}x \\
+      m_{11}y \\
+      m_{22}z + m_{23} \\
+      -z
+\end{array}
+\right)}
+\end{align*}
+$$
+
+我们第一次见到向量w最后一位不为1的情况。如果我们如前约定，向量最后一位w为1时，向量的(x,y,z)表示点的坐标，根据向量的特性我们可以用其除以其最后一位。
+
+$$
+\begin{align*}
+p' / p'.w &= {\left(
+\begin{array}{lcr}
+      m_{00}x / (-z) \\
+      m_{11}y / (-z) \\
+      (m_{22}z + m_{23}) / (-z) \\
+      1
+\end{array}
+\right)}
+\end{align*}
+$$
+
+我们可以发现在视角坐标系（View Coordinate）中离原点（即相机）越远的点，会因为除以-z，其坐标数值越小。这就是我们在数学上表示出了“近大远小”的透视规律。
+
+
+经历了这一系列的矩阵变换。我们得到了任意顶点在我们的标准坐标系中的坐标了。（其他仍有一些如视窗变换，将最终坐标的x y单位从比如0~1映射到画布的长宽，在此处省略）
 
 $$
 p_{ij}' = \boldsymbol{P}\boldsymbol{V}\boldsymbol{M_i}p_{ij}
 $$
 
-$$
-\boldsymbol{T} = {\left(
-\begin{array}{lcr}
-      1 & 0 & 0 & t_x \\
-      0 & 1 & 0 & t_y \\
-      0 & 0 & 1 & t_z \\
-      0 & 0 & 0 & 1
-\end{array}
-\right)}
-$$
 
-TODO：投影，depth比较
+::: tip
+在这篇介绍概览性文章中我们并未讨论所有关于变换矩阵的细节。有兴趣你可以阅读一系列其他文章[WebGPU Fundamentals](https://webgpufundamentals.org/webgpu/lessons/webgpu-orthographic-projection.html)
+:::
 
-在当今流行的图形API中，这一步通常被称为Vertex Stage。他决定了三角形们的顶点在2D显示框中的坐标。
+<ImgCaption src='/img/perspective-orthographic.webp'>
+透视投影和平行投影，上述投影矩阵的特征来自透视投影 图片来自
+<a href='https://olegvaraksin.medium.com/convert-world-to-screen-coordinates-and-vice-versa-in-webgl-c1d3f2868086'>这里</a>
+</ImgCaption>
+
+#### 深度排序
+
+除了“近大远小”，正确的透视还应确保距离近的三角形会遮挡住距离远的三角形。
+
+<ImgCaption src='/img/polygon-drawing-order.gif'>
+渲染一个字母F的3D模型。可以看到模型由多个三角形构成。在3D向2D投影过程中如果我们不注意每个三角形的绘制顺序，会让渲染结果错乱。我们需要保留3D坐标系下顶点到相机的距离信息（z轴，depth），来确保绘制的三角形像素的正确覆盖顺序。图片来自
+<a href='https://webgpufundamentals.org/webgpu/lessons/webgpu-orthographic-projection.html'>WebGPU Fundamentals</a>
+</ImgCaption>
+
+三角形的离相机的远近距离，其实就是视角坐标系中的z值。如果一个像素被多个（不透明的）三角形涂色，我们只需根据他们的z值排序，选择最近的那个作为像素最终颜色的来源即可。
+
+
+在当今流行的图形API中，以上决定顶点坐标的所有操作，通常被称为顶点渲染阶段（Vertex Stage）。他决定了三角形们的顶点在2D显示框中的坐标。
+
+
+
+TODO：可互动的projectcanvas：左 view frustum，右ndc space（但是iso 投影。里面物体顶点变换过）
+
 
 ### 光栅化
 
-::: tip 拓展阅读
-这里只是简略介绍了坐标变换矩阵和投影矩阵，想要了解更细节在图形API中的使用可以浏览 [WebGPU Fundamentals](https://webgpufundamentals.org/webgpu/lessons/webgpu-translation.html)
-:::
+我们刚才这一些操作告诉我们要在哪儿画像素。
+
+TODO translate
+
+在当今流行的图形API中，这一步通常被称为Rasterization Stage。因为广泛的需求和通用性，这一步通常已经由硬件和其驱动（driver）封装完成。
+
+<ImgCaption src='/img/rasterization.gif'>
+ 图片来自
+<a href='https://reference.wolfram.com/language/tutorial/PhysicallyBasedRendering.html'>这里</a>
+</ImgCaption>
 
 ::: details “光栅化”并不是唯一的算法
 “光栅化”（Rasterization）仍是当今在实时渲染领域（比如游戏）使用的算法。它很快，有很好的硬件支持，但其实是一种hack——他并没有很好地处理每束光的传播，反射等。同时它也并不是我们解决“把3D世界画出来”这一问题的唯一方案。
@@ -328,13 +427,6 @@ TODO：投影，depth比较
 在这两者之外，如果感兴趣，你还可以看看<a href='https://www.shadertoy.com/'>Shadertoy</a>。这里的程序大多并非用模型文件，而是用数学函数来描述的，配合使用Ray marching方法进行渲染。这在渲染一些无限循环的分形图形，纹理，以及体积云雾等时非常有用。
 :::
 
-我们刚才这一些操作告诉我们要在哪儿画像素。
-
-在当今流行的图形API中，这一步通常被称为Rasterization Stage。因为广泛的需求和通用性，这一步通常已经由硬件和其驱动（driver）封装完成。
-
-
-
-
 ## 如何决定每个像素的颜色？
 
 之前的坐标变换和光栅化，让我们可以对任意的三角形，相机位置，投影参数等输入，都可以给出所有三角形顶点在2D屏幕上的坐标，以及每个需要点亮的像素点坐标。
@@ -342,48 +434,37 @@ TODO：投影，depth比较
 现在，如果我们要画的物体是物理学意义上的绝对黑体，我们已经收工了——只要把每个要画的像素都赋值为RGB=(0, 0, 0)的黑色就行了。
 
 当然，我们要模拟的是真实世界3D渲染，你会发现我们还需要解决的另一个问题：如何决定每个要画的像素的颜色。
+其实3D世界中的光影效果的多种多样变化，主要来源于两点：
 
-经历过之前的步骤，你会自然想到我们需要定义每个场景中物体的材质的各个性质（反射颜色，光滑度，透明度等），场景中的光源（大小，强弱，方向，颜色等），并用适当的数学工具表示出他们。我们直接跳过这一部分的细节，来看看拥有了用数据细化充分表达的材质信息作为输入之后，如何来设计算法。
+- 光源和物体的相对位置
+- 不同物体表面对光的反射，散射，折射等性质的不同
 
+遵循物理定律，我们认为物体所呈现的颜色由其反射的光决定，而光来自光源发射出的光子。一个物体的某一点被相机看到而成像，是因为有光线通过了这一像素。这束光线可能是被反射，折射，散射而来。他可能直接来自光源，也可能是被其他表面间接反射。
 
-### 光照算法：BxDF
+$$
+L_o(p, v) = \int_{A} f_r(p, \omega_i, \omega_o)L_i(p, l)(n \cdot l) \,dl
+$$
 
-光线沿直线传播（当它在同一介质中时）。现实世界中我们看到不同的物体，是因为光传播中碰到物体后会反射，折射出不同颜色的光。对每种材质的表面，假设我们拥有这样一个函数，他以入射光的颜色和方向为输入，以其在每个方向的反射光的颜色为输出，那么对于任意物体表面的任意点，我们都可以根据场景描述信息获得他应呈现的颜色。
+<ImgCaption src='/img/AreaIntegrate.png'>
+</ImgCaption>
 
-光源位置，物体位置，法向向量
+任意一束进入相机的光出射光的颜色和强度，可以表示为所有进入到物体上这一点入射光被反射后的积分。这里的f函数描述了物体在任意给定点，从任意角度的入射光，得到的反射光在颜色和强度上的变化，他反应了物体材料的光学性质。这个函数叫做双向反射分布函数（BRDF: Bidirectinal Reflectance Distribution Function）。
 
-BSDF = BRDF + BTDF
-
-双向反射分布函数（BRDF: Bidirectinal Reflectance Distribution Function）
-Bling Phong
-
-### 基于物理的渲染（PBR: Physically Based Rendering）
-
-GGX 为例
+实际使用的算法会根据需要对这个理论上的公式进行各种的简化。比如只考虑直接来自光源的光线，而反射函数简单的使用入射光线和初设角度的点乘来决定的Blinn-Phong算法。
 
 ::: details 风格化渲染
-到此我们讨论的是模拟真实世界照相（Photorealistic），基于物理规则（Physically based rendering）的渲染风格。
+到此我们讨论的是模拟真实世界照相（Photorealistic）的渲染风格。
 实际上我们并非一定要遵循基于真实物理规则渲染。决定每个像素的颜色这一步其实完全取决于你想呈现的画面风格。
 3D虚拟世界中物体呈现的颜色不必来自光源和反射，可以像卡通画一样直接指定一种色系，无论它处于何种光源下，也可以给每个物体加上描黑轮廓等等。
 我们要做的是写出一段程序，对于任意的顶点和像素位置，能得到统一的风格。
-
-
 :::
 
 
 ### 纹理贴图（Texture）
 
-还记得三角形的性质吗？其中任意一点都可以表示为它三个顶点的线性插值。
+除了用算法来描述材料的反射性质，我们还需要数据来存储物体上每个点的材料性质。纹理贴图是一种常用的方法，还记得三角形的性质吗？其中任意一点都可以表示为它三个顶点的线性插值。如果我们给每个顶点赋予一个贴图坐标，对三角形上每个点的性质，都可以用插值的贴图坐标，到贴图上读取响应的数值来获得。
 
 贴图并不局限于颜色。常见的其他贴图有法线，材质光滑度，发光度等。
-
-### 后处理
-
-和拍照P图类似。只要有足够的信息，和算法，就能算出来。
-
-
-
-到这里，你已经了解了3D渲染的最基本原理。
 
 <ImgCaption src='https://www.adriancourreges.com/img/blog/2015/gtav/a/00_final_frame.jpg'>
 A rendered image from the Game Grand Theft Auto 5 from an <a href='https://www.adriancourreges.com/blog/2015/11/02/gta-v-graphics-study/'>article</a> by Adrian Courrèges. You might find it very interesting after you learn some 3D graphics
@@ -406,14 +487,8 @@ TODO：typical graphics rendering pipeline，and how to map to api
 ~~## 很好，如果我要做3D游戏，我得自己写代码实现上面的每一步吗？~~
 
 
+## OpenGL，Direct3D，Unity，Unreal...这些都是什么？有什么区别
 
-## 除了电子游戏，GPU或图形学还有哪些有趣的应用领域？
-
-
-
-## 我已经迫不及待要去做3D游戏了，我要用什么引擎？
-
-永远正确的废话：根据自身需求，选择合适的工具。
 
 
 ## 图形学有哪些应用？~~其实我想问能找什么工作~~
