@@ -131,12 +131,12 @@ TODO：用三角形
 当然，每个像素点存储的数据也可以根据需要而变。比如早期的单色液晶演示器每个像素可能只需要存储一个bit。有些有趣的渲染器也能用ASIIC字符显示每个像素。
 
 
-<ImgCaption src='https://github.com/alecjacobson/ascii3d/raw/master/suzanne-ascii3d.gif'>
+<ImgCaption src='/img/suzanne-ascii3d.gif'>
 来自github: https://github.com/alecjacobson/ascii3d
 </ImgCaption>
 :::
 
-在之前的例子中，把一个给定圆心坐标额半径的2D圆形“光栅化”看起来很直接和简单。2D矩形如果和坐标轴对齐（Axis Aligned），也很简单。没对齐的矩形看起来就没那么直接了。还有3D空间中的形状，比如旋转过了的，不正对着画布的三角形“面片”。
+在之前的例子中，把一个给定圆心坐标和半径的2D圆形“光栅化”看起来很直接和简单。2D矩形如果和坐标轴对齐（Axis Aligned），也很简单。没对齐的矩形看起来就没那么直接了。还有3D空间中的形状，比如旋转过了的，不正对着画布的三角形“面片”。
 
 对于这些任意摆放的形状，用计算机里分而治之的思想，我们会想到如果我们能把3D空间中任意的图形先处理成“对齐”画布的样子，再去找他们各自覆盖了的像素。我们需要用到一些数学工具来处理“光栅化一个在3D空间中的任意三角形”这项任务。
 
@@ -442,33 +442,87 @@ TODO translate
 遵循物理定律，我们认为物体所呈现的颜色由其反射的光决定，而光来自光源发射出的光子。一个物体的某一点被相机看到而成像，是因为有光线通过了这一像素。这束光线可能是被反射，折射，散射而来。他可能直接来自光源，也可能是被其他表面间接反射。
 
 $$
-L_o(p, v) = \int_{A} f_r(p, \omega_i, \omega_o)L_i(p, l)(n \cdot l) \,dl
+L_o(p, v) = \int_{A} f_r(p, l, v, \alpha_p)L_i(p, l)(n \cdot l) \,dl
 $$
 
 <ImgCaption src='/img/AreaIntegrate.png'>
 </ImgCaption>
 
-任意一束进入相机的光出射光的颜色和强度，可以表示为所有进入到物体上这一点入射光被反射后的积分。这里的f函数描述了物体在任意给定点，从任意角度的入射光，得到的反射光在颜色和强度上的变化，他反应了物体材料的光学性质。这个函数叫做双向反射分布函数（BRDF: Bidirectinal Reflectance Distribution Function）。
+任意一束进入相机的光出射光的颜色和强度，可以表示为所有进入到物体上这一点入射光被反射后的积分。这里的f函数描述了物体在任意给定点，从任意角度的入射光，得到的反射光在颜色和强度上的变化，他反应了物体材料的光学性质。这个函数
+*f<sub>r</sub>*
+叫做双向反射分布函数（BRDF: Bidirectinal Reflectance Distribution Function）。
 
-实际使用的算法会根据需要对这个理论上的公式进行各种的简化。比如只考虑直接来自光源的光线，而反射函数简单的使用入射光线和初设角度的点乘来决定的Blinn-Phong算法。
+实际使用的算法会根据实际使用需要，对这个理论上的公式进行各种的简化，比如：
+
+- 只考虑所有入射光线
+*L<sub>i</sub>*
+的一个子集：直接来自光源的入射光。简易而常见的Phong算法的
+*f<sub>r</sub>*即是如此。它使用简单的物体法线向量和直接来自光源的入射光向量的点乘来模拟物体表面的漫反射部分，用物体表面到摄像机的向量和直接来自光源的入射光向量的完美反射向量的点乘来模拟物体表面的镜面部分。
+
+$$
+f^r_{diffuse}(p, l, v) = k_{diffuse} (l \cdot n_{p}) 
+$$
+
+$$
+f^r_{specular}(p, l, v) = k_{specular} ( r \cdot v)^\alpha
+$$
+
+$$
+r = 2(l \cdot n_{p})n_{p} - l
+$$
+
+<ImgCaption src='/img/phong.png'>
+</ImgCaption>
+
+- 目前很多游戏引擎、通用模型文件常用的基于物理渲染（Physically Based Rendering）的GGX模型可以很好地表示导体和绝缘体的光线表面反射分布
+
+$$
+f^r(p, l, v) = \frac{F(l,h_r)G(l, v, h_r)D(h_r)}{4|l \cdot n||v \cdot n|}
+$$
+
+$$
+h_r = sign(l \cdot n)(l + v)
+$$
+
+其中F表示Frenel反射（反射光线强度与出射角关系）描述表面的导体/绝缘体反射特性；G表示表面阴影遮挡，D表示法线表面向量分布；它们描述物体表面的光滑/粗糙/坑洼等的特性和程度。
+
+<ImgCaption src='https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/MetalRoughSpheres/screenshot/screenshot.png'>
+glTF模型选用的PBR光照模型。可以看到不同参数下的物体表面反射特性。
+</ImgCaption>
+
+::: details 纹理贴图（Texture）
+
+我们之前跳过了如何存储和描述材料的各种反射性质。除了对每种材质（金属，木头）使用一组表示导电性、光滑性、反射参数等数字。纹理贴图是一种广泛常用的方法，能够轻易地给物体上每个点赋予不同的反射数值。还记得三角形的性质吗？其中任意一点都可以表示为它三个顶点的线性插值。如果我们给每个顶点赋予一个贴图坐标，对三角形上每个点的性质，都可以用插值的贴图坐标，到贴图上读取响应的数值来获得。
+
+贴图并可以不局限于物体的表面颜色。常见的其他贴图有法线，材质光滑度，金属度，发光度等。
+
+TODO: 图
+:::
+
 
 ::: details 风格化渲染
 到此我们讨论的是模拟真实世界照相（Photorealistic）的渲染风格。
 实际上我们并非一定要遵循基于真实物理规则渲染。决定每个像素的颜色这一步其实完全取决于你想呈现的画面风格。
 3D虚拟世界中物体呈现的颜色不必来自光源和反射，可以像卡通画一样直接指定一种色系，无论它处于何种光源下，也可以给每个物体加上描黑轮廓等等。
 我们要做的是写出一段程序，对于任意的顶点和像素位置，能得到统一的风格。
+
+TODO: 图
+
+游戏行业中程序员、技术美术（Techincal Artist）和美术会使用各种办法来达到他们需要的画面和模拟效果。其中很大一部分工作就是写CPU以及GPU程序，配合美术资源，在游戏运行中以能够接受的开销获得各种满意的画面效果
+
+<ImgCaption src='https://www.adriancourreges.com/img/blog/2015/gtav/a/00_final_frame.jpg'>
+一篇非常有趣的文章：分析游戏GTA5中的渲染流程 <a href='https://www.adriancourreges.com/blog/2015/11/02/gta-v-graphics-study/'>article</a> by Adrian Courrèges.
+</ImgCaption>
+
 :::
 
 
-### 纹理贴图（Texture）
 
-除了用算法来描述材料的反射性质，我们还需要数据来存储物体上每个点的材料性质。纹理贴图是一种常用的方法，还记得三角形的性质吗？其中任意一点都可以表示为它三个顶点的线性插值。如果我们给每个顶点赋予一个贴图坐标，对三角形上每个点的性质，都可以用插值的贴图坐标，到贴图上读取响应的数值来获得。
+::: details 2D渲染
+在这套3D渲染管线被广泛使用和被GPU硬件加速的今天，很多2D渲染也是使用的3D渲染技术来实现的。2D场景中的物体常被表示为面向相机的矩形面片。他们上的人物或风景则可以用贴图来表示。有些2D角色的动画也是用一组贴图序列连续播放来实现的。
 
-贴图并不局限于颜色。常见的其他贴图有法线，材质光滑度，发光度等。
-
-<ImgCaption src='https://www.adriancourreges.com/img/blog/2015/gtav/a/00_final_frame.jpg'>
-A rendered image from the Game Grand Theft Auto 5 from an <a href='https://www.adriancourreges.com/blog/2015/11/02/gta-v-graphics-study/'>article</a> by Adrian Courrèges. You might find it very interesting after you learn some 3D graphics
-</ImgCaption>
+TODO: 图
+:::
 
 ## 讲了这么多，还没提到GPU是干什么的？
 
@@ -483,13 +537,14 @@ TODO：english version port
 TODO：typical graphics rendering pipeline，and how to map to api
 
 
-
-~~## 很好，如果我要做3D游戏，我得自己写代码实现上面的每一步吗？~~
+::: details GPGPU
+TODO
+:::
 
 
 ## OpenGL，Direct3D，Unity，Unreal...这些都是什么？有什么区别
 
 
 
-## 图形学有哪些应用？~~其实我想问能找什么工作~~
+
 
