@@ -93,10 +93,17 @@ const shapes: DrawObject[];
 
 ## 如何把场景信息，“投影”到像素的二维数组上？
 
-第一个问题：描述这些东西
+第一个问题：如何向计算机精确地描述场景里的物体。
 
-你一定听说过“3D模型”这个词
-TODO：用三角形
+你一定听说过“3D模型”这个词。是的，这是目前工业界最常用的解决“如何描述一个物体”的方法。所有物体都是由三角形组成... 
+
+如果你将一个`.obj` 3D模型文件以文本文档的形式打开，你所看到的就只是一长串数字。通常每行以`v`开头的3个数字表示一个顶点（点）的x、y、z坐标。而每3个顶点表示一个三角形。
+
+```
+v -0.806124 0.440184 0.440084
+v -0.737070 -0.000000 0.797186
+v -0.612160 -0.000000 0.797185
+```
 
 <ImgCaption src='/img/blender-wireframe.jpg'>
 3D建模软件<a href='https://www.blender.org/'>Blender</a>的截图。 从右侧Wireframe视图可以看出，人物模型是由三角形和四边形（两个三角形）构成的。类似的3D建模软件为用户提供了图形化交互界面以方便地创建和调整三角形的顶点位置，并最终导出成保存一系列三角形数据地模型文件，用来被3D渲染程序使用。
@@ -398,7 +405,7 @@ $$
 三角形的离相机的远近距离，其实就是视角坐标系中的z值。如果一个像素被多个（不透明的）三角形涂色，我们只需根据他们的z值排序，选择最近的那个作为像素最终颜色的来源即可。
 
 
-在当今流行的图形API中，以上决定顶点坐标的所有操作，通常被称为顶点渲染阶段（Vertex Stage）。他决定了三角形们的顶点在2D显示框中的坐标。
+**在当今流行的图形API的渲染管线中，以上决定顶点坐标的所有操作，通常被称为顶点渲染阶段（Vertex Stage）。他决定了三角形们的顶点在2D显示框中的坐标。**
 
 
 
@@ -407,11 +414,14 @@ TODO：可互动的projectcanvas：左 view frustum，右ndc space（但是iso �
 
 ### 光栅化
 
-我们刚才这一些操作告诉我们要在哪儿画像素。
+我们刚才这一些操作告诉我们三角形的顶点在屏幕上的坐标。我们还需要把这些三角形的内部“涂满”。在当今流行的图形API中，这一步通常被称为Rasterization Stage。要决定哪些像素落在三角形内部，有不少算法。其中一种被叫做扫描线的算法：我们可以根据三角形的三个顶点，获得其三条边的直线表达式。于是我们可以从三个顶点最小的y轴值开始，对每一个y值，找到x轴值最小的边，和x轴值最大的边。在(x<sub>min</sub>, y)和(x<sub>max</sub>, y)之间的点，就是我们需要“涂满”的点。
 
-TODO translate
+<ImgCaption src='/img/scanline.png'>
+ 图片来自
+<a href='https://www.semanticscholar.org/paper/Scanline-Edge-flag-Algorithm-for-Antialiasing-Kallio/8f774e34b946251503e1aa5f8063e61cd4b94851'>这里</a>
+</ImgCaption>
 
-在当今流行的图形API中，这一步通常被称为Rasterization Stage。因为广泛的需求和通用性，这一步通常已经由硬件和其驱动（driver）封装完成。
+**在当今流行的图形API的渲染管线中，光栅化（Rasterization Stage）发生在Vertex Stage之后。且因其通用性，其功能常被内置于硬件驱动中被加速。**
 
 <ImgCaption src='/img/rasterization.gif'>
  图片来自
@@ -424,7 +434,7 @@ TODO translate
 “光线追踪”（Ray Tracing
 ）传统上被广泛应用在离线渲染领域（比如动画电影）。他更善于解决各种来自环境的多次间接反射的光照处理。也因此它通常效果更好但更慢。不过正如你一定听过RTX On，光追等词汇，在硬件性能发展的今天，Ray Tracing也开始被部分运用在实时渲染领域。
 
-在这两者之外，如果感兴趣，你还可以看看<a href='https://www.shadertoy.com/'>Shadertoy</a>。这里的程序大多并非用模型文件，而是用数学函数来描述的，配合使用Ray marching方法进行渲染。这在渲染一些无限循环的分形图形，纹理，以及体积云雾等时非常有用。
+在这两者之外，如果感兴趣，你还可以看看<a href='https://www.shadertoy.com/'>Shadertoy</a>。这里的程序大多并非用模型文件，而是用Signed Distance Field的数学函数来描述的，配合使用Ray marching方法进行渲染。这在渲染一些无限循环的分形图形，纹理，以及体积云雾等时非常有用。
 :::
 
 ## 如何决定每个像素的颜色？
@@ -524,27 +534,57 @@ TODO: 图
 TODO: 图
 :::
 
+**在当今流行的图形API中，以上决定像素颜色的所有操作，通常被称为像素渲染阶段（Pixel/Fragment Stage）。他决定了Vertex Stage和Rasterize Stage后产生的像素的颜色。这三个阶段是实时渲染管线中最主要的三个阶段**
+
+<ImgCaption src='/img/graphics-pipeline.svg'>
+简化的 GPU API图形渲染管线示意图 from
+<a href='https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction'>Vulkan Tutorial</a>
+</ImgCaption>
+
 ## 讲了这么多，还没提到GPU是干什么的？
 
+我们之前讨论了很多图形学渲染的算法（主要是实时渲染）。你可能会感到困惑，我以前常常听到GPU这个词。可是刚刚所有的算法，似乎都可以用我平时写代码来实现啊，GPU在图形学中扮演了怎样的角色呢？还有，这些渲染算法我用自己已掌握的高级编程语言（如C++，Typescript）都能实现，那我常听说的OpenGL, Direct3D，Vulkan，Metal……又是怎么一回事？
+
+一句话的简短回答：性能！
+
+在实时渲染的三维应用中，为了达到流畅的交互体验，通常至少需要每秒渲染30帧（30fps(frame per second)），甚至60帧（在VR设备中要避免眩晕甚至要达到90帧）。这意味着程序需要在约33毫秒内渲染一帧（60fps的情况下为16.7毫秒）。对于现代游戏而言，这意味着计算机要在这短短的每一帧都需要处理成千上万个三角形和数百万个像素的计算。虽然每个三角形或像素的处理使用的算法都相同，但它们的数据都略有不同（比如入射光的角度，到摄像机的角度等等），使得程序难以将一个像素重复使用计算结果于另一个像素。英语里有个词叫"Embarrasingly Parrallel"。我觉得它十分恰当地描述了这种情况。
+
+传统的CPU结构和计算单元强大，但数量并不多。编写运行在CPU上的程序实现图形渲染算法，不得不**顺序**地处理所有这些三角形/像素的计算，因而将无法满足实时渲染对计算时间的要求。
+
+历史上，人们观察到这些3D图形应用具有一些共同特征：
+- 对于任何3D游戏/应用程序，每个三角形/像素的计算过程大多是相同且固定的。实际上，与不同、灵活且复杂的CPU程序逻辑相比，这些计算过程相对简单，绝大部分是浮点数的计算。
+- 每个三角形/像素的计算是**并行**进行的，彼此之间几乎没有依赖关系。即一个像素不需要等待另一个像素的计算结果才能完成自己的计算。
+
+根据这些特性，人们从大约1990年代开始设计专门处理这些任务的硬件，并将其命名为图形处理单元（GPU，Graphics Processing Unit）。如今，GPU由较小的核心和内存缓存组成，与CPU相比较少，但数量众多，这意味着它们可以同时处理许多并行任务。
 
 <ImgCaption src='/img/cpu-gpu-architecture.png'>
 简化的CPU和GPU架构图 
 <a href='https://docs.nvidia.com/cuda/cuda-c-programming-guide/'>Nvidia CUDA programming guide</a>
 </ImgCaption>
 
-TODO：english version port
+有了特殊的硬件，封装并抽象其借口，提供常用的图形渲染功能的API也应运而生。OpenGL，Direct3D等就是这样在不同操作系统和平台上方便操纵和使用GPU功能的API。在数十年的发展过程中，他们也从一开始的固定写死渲染管线，仅仅接受提供数据，慢慢演化出了之前对提到过的Vertex Stage，Fragment Stage等阶段进行编程的功能。运行在GPU上的操控Vertex/Fragment Stage的程序，就叫做Shader（着色器/渲染器）。
 
-TODO：typical graphics rendering pipeline，and how to map to api
+::: details 图形渲染API，Shader，游戏引擎等各自的角色。
+图形渲染API（OpenGL Direct3D）常常会提供多种CPU高级编程语言的接口（C++，Java，Javascript）
+而Shader，作为运行在GPU有着特定应用场景和功能的程序，通常有自己的编程语言（Shading Langugae），如GLSL（OpenGL），HLSL（Direct3D）等。
 
-
-::: details GPGPU
-TODO
+图形渲染是常用的游戏引擎（Unity，Unreal）中的一部分功能。游戏引擎封装了图形渲染API的部分（同时也封装了很多其他功能模块如物理模拟，模型预处理，声音处理等），提供给用户更多功能的GUI操作界面和编程接口，让用户集中于游戏内容的开发。使用游戏引擎开发游戏必要时也会编写适应自己需求的Shader。
 :::
 
+图形渲染API提供的功能，简单来说，就是让开发者方便地根据自身需求完成这两件事情：
 
-## OpenGL，Direct3D，Unity，Unreal...这些都是什么？有什么区别
+- 把CPU内存里的数据搬运到GPU内存里的Buffer（缓冲区/数据存储区）
+- 告诉GPU怎么操作Buffer里的数据
+
+回想一下我们之前讨论的，把要画的场景描述成三角形顶点坐标：浮点数数组；变换矩阵：浮点数；物体材料的光学反射参数：浮点数；纹理贴图：RGB浮点数数组；……（大多数）图形学领域的数据都被转化成了浮点数。图形渲染API做的就是把这些浮点数搬运到GPU内存，并告诉GPU，每一块数据的意义，和如何读取和使用它们（算法）。
+
+### 通用GPU编程（GPGPU，General Purpose GPU Programming）
+
+GPU诞生之初，正如它名字所指，是用于解决3D图形渲染的问题。不过当你了解了GPU和图形API运作的本质：搬运数据和处理数据，就不难理解，在GPU提供了一种强大的并行计算能力后，会自然被人们发现这种算力在其他领域的作用了。人们也开发了专门用命令GPU处理通用应用领域数据的API（CUDA，OpenCL等）。现今最流行的机器学习算法神经网络正是GPU这种并行计算能力的受益者。
 
 
+## 结语
 
+TODO
 
 
