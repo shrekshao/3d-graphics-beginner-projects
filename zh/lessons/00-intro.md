@@ -408,11 +408,6 @@ $$
 
 **在当今流行的图形API的渲染管线中，以上决定顶点坐标的所有操作，通常被称为顶点渲染阶段（Vertex Stage）。他决定了三角形们的顶点在2D显示框中的坐标。**
 
-
-
-TODO：可互动的projectcanvas：左 view frustum，右ndc space（但是iso 投影。里面物体顶点变换过）
-
-
 ### 光栅化
 
 我们刚才这一些操作告诉我们三角形的顶点在屏幕上的坐标。我们还需要把这些三角形的内部“涂满”。在当今流行的图形API中，这一步通常被称为Rasterization Stage。要决定哪些像素落在三角形内部，有不少算法。其中一种被叫做扫描线的算法：我们可以根据三角形的三个顶点，获得其三条边的直线表达式。于是我们可以从三个顶点最小的y轴值开始，对每一个y值，找到x轴值最小的边，和x轴值最大的边。在(x<sub>min</sub>, y)和(x<sub>max</sub>, y)之间的点，就是我们需要“涂满”的点。
@@ -513,7 +508,9 @@ glTF模型选用的PBR光照模型。可以看到不同参数下的物体表面�
 
 贴图并可以不局限于物体的表面颜色。常见的其他贴图有法线，材质光滑度，金属度，发光度等。
 
-TODO: 图
+<ImgCaption src='/img/gltf-helmet.gif'>
+一个使用各种PBR纹理的头盔模型。可以看到每种功能贴图和最后的渲染效果。<a href='https://sketchfab.com/3d-models/battle-damaged-sci-fi-helmet-pbr-b81008d513954189a063ff901f7abfe4'>sketchfab url</a>
+</ImgCaption>
 :::
 
 
@@ -523,7 +520,9 @@ TODO: 图
 3D虚拟世界中物体呈现的颜色不必来自光源和反射，可以像卡通画一样直接指定一种色系，无论它处于何种光源下，也可以给每个物体加上描黑轮廓等等。
 我们要做的是写出一段程序，对于任意的顶点和像素位置，能得到统一的风格。
 
-TODO: 图
+<ImgCaption src='/img/gdc-toon.jpg'>
+GuiltyGearXrd中的卡通渲染风格。为了渲染效果甚至会调整法线向量以偏移几何意义上的正确值。来自<a href='https://www.youtube.com/watch?v=yhGjCzxJV3E'>GDC</a>
+</ImgCaption>
 
 游戏行业中程序员、技术美术（Techincal Artist）和美术会使用各种办法来达到他们需要的画面和模拟效果。其中很大一部分工作就是写CPU以及GPU程序，配合美术资源，在游戏运行中以能够接受的开销获得各种满意的画面效果
 
@@ -538,7 +537,13 @@ TODO: 图
 ::: details 2D渲染
 在这套3D渲染管线被广泛使用和被GPU硬件加速的今天，很多2D渲染也是使用的3D渲染技术来实现的。2D场景中的物体常被表示为面向相机的矩形面片。他们上的人物或风景则可以用贴图来表示。有些2D角色的动画也是用一组贴图序列连续播放来实现的。
 
-TODO: 图
+<ImgCaption src='/img/2d-final.jpg'></ImgCaption>
+<ImgCaption src='/img/2d-scroll.jpg'>
+3D引擎中实现2D游戏，可以看到场景中的前景，后景，人物都是带有贴图的，不同深度的矩形面片
+</ImgCaption>
+
+并非局限于游戏。很多窗口GUI，浏览器HTML网页内容元素渲染，看起来和3D无关，但为充分利用这些硬件性能，底层其实都是利用图形渲染API绘制了面片，生成纹理图片的方式来实现的。
+
 :::
 
 **在当今流行的图形API中，以上决定像素颜色的所有操作，通常被称为像素渲染阶段（Pixel/Fragment Stage）。他决定了Vertex Stage和Rasterize Stage后产生的像素的颜色。这三个阶段是实时渲染管线中最主要的三个阶段**
@@ -547,7 +552,6 @@ TODO: 图
 简化的 GPU API图形渲染管线示意图 from
 <a href='https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction'>Vulkan Tutorial</a>
 </ImgCaption>
-
 ## 讲了这么多，还没提到GPU是干什么的？
 
 我们之前讨论了很多图形学渲染的算法（主要是实时渲染）。你可能会感到困惑，我以前常常听到GPU这个词。可是刚刚所有的算法，似乎都可以用我平时写代码来实现啊，GPU在图形学中扮演了怎样的角色呢？还有，这些渲染算法我用自己已掌握的高级编程语言（如C++，Typescript）都能实现，那我常听说的OpenGL, Direct3D，Vulkan，Metal……又是怎么一回事？
@@ -595,9 +599,12 @@ TODO: 图
 
 ### 通用GPU编程（GPGPU，General Purpose GPU Programming）
 
-GPU诞生之初，正如它名字所指，是用于解决3D图形渲染的问题。不过当你了解了GPU和图形API运作的本质：搬运数据和处理数据，就不难理解，在GPU提供了一种强大的并行计算能力后，会自然被人们发现这种算力在其他领域的作用了。人们也开发了专门用命令GPU处理通用应用领域数据的API（CUDA，OpenCL等）。现今最流行的机器学习算法神经网络正是GPU这种并行计算能力的受益者。
+GPU诞生之初，正如它名字所指，是用于解决3D图形渲染的问题。不过当你了解了GPU和图形API运作的本质：搬运数据和处理数据，就不难理解，在GPU提供了一种强大的并行计算能力后，会自然被人们发现这种算力在其他领域的作用了。人们也开发了专门用命令GPU处理通用应用领域数据的API（CUDA，OpenCL等）。
 
-TODO: 图
+<ImgCaption src='/img/cuda.png'>
+Nvidia的CUDA是GPGPU高性能计算常用的API。它被广泛用于机器学习、视频编解码处理、计算金融等很多领域。
+<a href='https://docs.nvidia.com/cuda/cuda-c-programming-guide/'>Nvidia CUDA programming guide</a>
+</ImgCaption>
 
 ## 结语
 
