@@ -7,11 +7,6 @@ import init from '../../projects/00-demo.ts';
 # 3D图形学初学者入门介绍
 ##### -- 关于完全能听懂的电脑是怎么把3D游戏画出来的我知道的那些事
 
-::: tip 为什么有这篇文章
-TODO
-:::
-
-
 ## 引子问题
 
 考虑这样一个引子问题：写一段程序，用来在一张2D画布上依据对一个场景的描述，画出一幅画。你会怎样用编程语言实现它？
@@ -49,7 +44,7 @@ ctx.putImageData(imgData, 0, 0);
 你应该能够阅读和理解这段程序，以继续阅读后面的部分。如果你使用过其他编程语言而单纯对Typescript不熟悉，也许你可以看看这篇文章：[Tutorials for programmers from other languages](https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html)
 :::
 
-你大约已经发现了，上面这段程序把“场景描述”硬编码到了程序里。恭喜你你已经学会抢答了。这是因为我们只是人工地把自然语言下的“场景描述”写成了程序，它对其他的场景并没有可扩展性。如果我现在给我们之前的“场景描述”加上
+你大约已经发现了，上面这段程序把“场景描述”硬编码到了程序里。这是因为我们只是人工地把自然语言下的“场景描述”写成了程序，它对其他的场景并没有可扩展性。如果我现在给我们之前的“场景描述”加上
 *"……，和一个蓝色的圆形位于画面的中央"*
 呢？为了解决这个问题，我们可能想到为我们的场景描述提供更多的数据结构。
 
@@ -89,11 +84,12 @@ const shapes: DrawObject[];
 
 把这个任务再拆分成一些更小的子任务，可以帮助我们发现具体需要解决哪些问题：
 
-## 如何向计算机精确地描述场景？
+- 如何向计算机精确地描述场景？
   - 场景里有什么“东西”，每个“东西”长什么样子，摆在哪里，表面是什么颜色？
   - 如果用拍电影类比，场景是从哪里，什么角度，用什么镜头拍摄的？
+- 如何把已经精确描述的场景信息，最终转变为屏幕上像素的二维数组？
 
-## 如何把场景信息，“投影”到像素的二维数组上？
+## 如何向计算机精确地描述场景？
 
 第一个问题：如何向计算机精确地描述场景里的物体。
 
@@ -127,7 +123,7 @@ v -0.612160 -0.000000 0.797185
 
 在之前的画2D圆形的例子中，你所实现的程序实际上是完成一个叫“光栅化”(Rasterization)的步骤：
 
-- 它的输入：矢量图形信息（一推三角形的顶点坐标）
+- 它的输入：矢量图形信息（一堆三角形的顶点坐标）
 - 它的输出：以二维数组形式排列的像素点颜色值(RGB)
 
 ::: details 为什么是输出二维数组的像素？
@@ -328,7 +324,7 @@ $$
 \right)}
 $$
 
-矩阵里非零的m_{ij}由投影相关的参数：如视锥远、近平面距离，视锥角度（Field of view）等导出得到。投影矩阵的重点在于最后一列。我们把它乘上一个向量展开：
+矩阵里非零的<i>m<sub>ij</sub></i>由投影相关的参数：如视锥远、近平面距离，视锥角度（Field of view）等导出得到。投影矩阵的重点在于最后一列。我们把它乘上一个向量展开：
 
 $$
 \begin{align*}
@@ -394,17 +390,6 @@ $$
 <a href='https://olegvaraksin.medium.com/convert-world-to-screen-coordinates-and-vice-versa-in-webgl-c1d3f2868086'>这里</a>
 </ImgCaption>
 
-#### 深度排序
-
-除了“近大远小”，正确的透视还应确保距离近的三角形会遮挡住距离远的三角形。
-
-<ImgCaption src='/img/polygon-drawing-order.gif'>
-渲染一个字母F的3D模型。可以看到模型由多个三角形构成。在3D向2D投影过程中如果我们不注意每个三角形的绘制顺序，会让渲染结果错乱。我们需要保留3D坐标系下顶点到相机的距离信息（z轴，depth），来确保绘制的三角形像素的正确覆盖顺序。图片来自
-<a href='https://webgpufundamentals.org/webgpu/lessons/webgpu-orthographic-projection.html'>WebGPU Fundamentals</a>
-</ImgCaption>
-
-三角形的离相机的远近距离，其实就是视角坐标系中的z值。如果一个像素被多个（不透明的）三角形涂色，我们只需根据他们的z值排序，选择最近的那个作为像素最终颜色的来源即可。
-
 
 **在当今流行的图形API的渲染管线中，以上决定顶点坐标的所有操作，通常被称为顶点渲染阶段（Vertex Stage）。他决定了三角形们的顶点在2D显示框中的坐标。**
 
@@ -433,6 +418,17 @@ $$
 在这两者之外，如果感兴趣，你还可以看看<a href='https://www.shadertoy.com/'>Shadertoy</a>，或<a href='https://www.bilibili.com/video/BV16c411u7X7'>IQ在bilibili上的介绍视频</a>。这里的程序大多并非用模型文件，而是用Signed Distance Field的数学函数来描述的，配合使用Ray marching方法进行渲染。这在渲染一些无限循环的分形图形，纹理，以及体积云雾等时非常有用。
 :::
 
+#### 深度排序
+
+除了“近大远小”，正确的透视还应确保距离近的物体会遮挡住距离远的物体。
+
+<ImgCaption src='/img/polygon-drawing-order.gif'>
+渲染一个字母F的3D模型。可以看到模型由多个三角形构成。在3D向2D投影过程中如果我们不注意每个三角形的绘制顺序，会让渲染结果错乱。我们需要保留3D坐标系下顶点到相机的距离信息（z轴，depth），来确保绘制的三角形像素的正确覆盖顺序。图片来自
+<a href='https://webgpufundamentals.org/webgpu/lessons/webgpu-orthographic-projection.html'>WebGPU Fundamentals</a>
+</ImgCaption>
+
+三角形的像素的离相机的远近距离，其实就是视角坐标系中的z值。如果一个像素被多个（不透明的）三角形涂色，我们只需根据他们的z值排序，选择最近的那个作为像素最终颜色的来源即可。
+
 ## 如何决定每个像素的颜色？
 
 之前的坐标变换和光栅化，让我们可以对任意的三角形，相机位置，投影参数等输入，都可以给出所有三角形顶点在2D屏幕上的坐标，以及每个需要点亮的像素点坐标。
@@ -445,7 +441,7 @@ $$
 - 光源和物体的相对位置
 - 不同物体表面对光的反射，散射，折射等性质的不同
 
-遵循物理定律，我们认为物体所呈现的颜色由其反射的光决定，而光来自光源发射出的光子。一个物体的某一点被相机看到而成像，是因为有光线通过了这一像素。这束光线可能是被反射，折射，散射而来。他可能直接来自光源，也可能是被其他表面间接反射。
+根据物理规律，我们看到的颜色来自于光的颜色（波长），光来自物体表面的反射，而反射光最终来自光源发射出的光子。一个物体的某一点被相机看到而成像，是因为有光线通过了屏幕上的这一像素。这束光线可能是被反射，折射，散射而来。他可能直接来自光源，也可能是被其他表面间接反射。
 
 $$
 L_o(p, v) = \int_{A} f_r(p, l, v, \alpha_p)L_i(p, l)(n \cdot l) \,dl
@@ -454,7 +450,9 @@ $$
 <ImgCaption src='/img/AreaIntegrate.png'>
 </ImgCaption>
 
-任意一束进入相机的光出射光的颜色和强度，可以表示为所有进入到物体上这一点入射光被反射后的积分。这里的f函数描述了物体在任意给定点，从任意角度的入射光，得到的所有可能反射半球上的反射光的分布，以及它们在颜色和强度上的变化。他模拟了物体表面材料的光学性质。这个函数
+任意一束进入相机的光出射光的颜色和强度，可以表示为所有进入到物体上这一点入射光被反射后的积分。这里的假想的
+*f<sub>r</sub>*
+函数描述了物体在任意给定点，从任意角度的入射光，得到的所有可能反射半球上的反射光的分布，以及它们在颜色和强度上的变化。他模拟了物体表面材料的光学性质。这个函数
 *f<sub>r</sub>*
 叫做双向反射分布函数（BRDF: Bidirectinal Reflectance Distribution Function）。
 
@@ -497,6 +495,13 @@ h_r = sign(l \cdot n)(l + v)
 $$
 
 其中F表示Frenel反射（反射光线强度与出射角关系）描述表面的导体/绝缘体反射特性；G表示表面阴影遮挡，D表示法线表面向量分布；它们描述物体表面的光滑/粗糙/坑洼等的特性和程度。
+
+<ImgCaption src='/img/f-term.jpg'>
+</ImgCaption>
+<ImgCaption src='/img/g-term.jpg'>
+</ImgCaption>
+<ImgCaption src='/img/d-term.jpg'>
+</ImgCaption>
 
 <ImgCaption src='/img/pbr-material.png'>
 glTF模型选用的PBR光照模型。可以看到不同参数下的物体表面反射特性。
@@ -552,6 +557,7 @@ GuiltyGearXrd中的卡通渲染风格。为了渲染效果甚至会调整法线�
 简化的 GPU API图形渲染管线示意图 from
 <a href='https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction'>Vulkan Tutorial</a>
 </ImgCaption>
+
 ## 讲了这么多，还没提到GPU是干什么的？
 
 我们之前讨论了很多图形学渲染的算法（主要是实时渲染）。你可能会感到困惑，我以前常常听到GPU这个词。可是刚刚所有的算法，似乎都可以用我平时写代码来实现啊，GPU在图形学中扮演了怎样的角色呢？还有，这些渲染算法我用自己已掌握的高级编程语言（如C++，Typescript）都能实现，那我常听说的OpenGL, Direct3D，Vulkan，Metal……又是怎么一回事？
@@ -601,13 +607,19 @@ GuiltyGearXrd中的卡通渲染风格。为了渲染效果甚至会调整法线�
 
 GPU诞生之初，正如它名字所指，是用于解决3D图形渲染的问题。不过当你了解了GPU和图形API运作的本质：搬运数据和处理数据，就不难理解，在GPU提供了一种强大的并行计算能力后，会自然被人们发现这种算力在其他领域的作用了。人们也开发了专门用命令GPU处理通用应用领域数据的API（CUDA，OpenCL等）。
 
-<ImgCaption src='/img/cuda.png'>
+<ImgCaption src='/img/cuda.jpg'>
 Nvidia的CUDA是GPGPU高性能计算常用的API。它被广泛用于机器学习、视频编解码处理、计算金融等很多领域。
 <a href='https://docs.nvidia.com/cuda/cuda-c-programming-guide/'>Nvidia CUDA programming guide</a>
 </ImgCaption>
 
 ## 结语
 
-TODO
+希望到这里你已经对实时的3D渲染是怎么一回事有了一些概念，不再是两眼一抹黑的状态。
+
+我作为Project driven learning的拥趸，想要提供给你一系列配置好的，可以直接上手直入主题的3D实时渲染相关的Project大作业，让你继续能够练习使用图形学知识完成项目。然而很遗憾这部分工作目前还没有完成，如果你想自己更多探索，也许你可以尝试：
+
+- [webgpufundamentals.org](https://webgpufundamentals.org/)，学习WebGPU API的详细教程。（技能与工业界相关）
+- [UCSB GAMES 101](https://sites.cs.ucsb.edu/~lingqi/teaching/games101.html)，美国大学系统教授图形学知识的课程。（作业内容旨在学习知识算法，并非工业界生产所使用）
+- 直接学习使用Unity, Unreal, Godot等游戏引擎，（或Three.js等渲染库）完成自己想做的项目。
 
 
