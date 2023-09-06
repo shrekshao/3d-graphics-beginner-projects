@@ -1,5 +1,7 @@
 <script setup lang='ts'>
 import ImgCaption from '../../src/components/img-caption.vue';
+import ProjectCanvas from '../../projects/gpu-canvas.vue';
+import init from '../../projects/00-demo.ts';
 </script>
 
 # 3D图形学初学者入门介绍
@@ -305,7 +307,6 @@ $$
 
 ### 投影变换和深度比较：3D→2D的神奇一步
 
-TODO：配view frustum example配图（动态？）
 <ImgCaption src='/img/gl_projectionmatrix01.png'>
 透视投影的视锥（View Frustum），和屏幕所处的标准坐标系（Normalized Device Coordinate）（这里是一个右手系的从-1到1的NDC。其他常用的NDC也有：左手系的从0到1） 图片来自
 <a href='https://www.songho.ca/opengl/gl_projectionmatrix.html'>OpenGL Projection Matrix</a>
@@ -417,7 +418,7 @@ TODO：可互动的projectcanvas：左 view frustum，右ndc space（但是iso �
 我们刚才这一些操作告诉我们三角形的顶点在屏幕上的坐标。我们还需要把这些三角形的内部“涂满”。在当今流行的图形API中，这一步通常被称为Rasterization Stage。要决定哪些像素落在三角形内部，有不少算法。其中一种被叫做扫描线的算法：我们可以根据三角形的三个顶点，获得其三条边的直线表达式。于是我们可以从三个顶点最小的y轴值开始，对每一个y值，找到x轴值最小的边，和x轴值最大的边。在(x<sub>min</sub>, y)和(x<sub>max</sub>, y)之间的点，就是我们需要“涂满”的点。
 
 <ImgCaption src='/img/scanline.png'>
- 图片来自
+ 扫描线（Scanline）光栅化的示意图 图片来自
 <a href='https://www.semanticscholar.org/paper/Scanline-Edge-flag-Algorithm-for-Antialiasing-Kallio/8f774e34b946251503e1aa5f8063e61cd4b94851'>这里</a>
 </ImgCaption>
 
@@ -434,7 +435,7 @@ TODO：可互动的projectcanvas：左 view frustum，右ndc space（但是iso �
 “光线追踪”（Ray Tracing
 ）传统上被广泛应用在离线渲染领域（比如动画电影）。他更善于解决各种来自环境的多次间接反射的光照处理。也因此它通常效果更好但更慢。不过正如你一定听过RTX On，光追等词汇，在硬件性能发展的今天，Ray Tracing也开始被部分运用在实时渲染领域。
 
-在这两者之外，如果感兴趣，你还可以看看<a href='https://www.shadertoy.com/'>Shadertoy</a>。这里的程序大多并非用模型文件，而是用Signed Distance Field的数学函数来描述的，配合使用Ray marching方法进行渲染。这在渲染一些无限循环的分形图形，纹理，以及体积云雾等时非常有用。
+在这两者之外，如果感兴趣，你还可以看看<a href='https://www.shadertoy.com/'>Shadertoy</a>，或<a href='https://www.bilibili.com/video/BV16c411u7X7'>IQ在bilibili上的介绍视频</a>。这里的程序大多并非用模型文件，而是用Signed Distance Field的数学函数来描述的，配合使用Ray marching方法进行渲染。这在渲染一些无限循环的分形图形，纹理，以及体积云雾等时非常有用。
 :::
 
 ## 如何决定每个像素的颜色？
@@ -458,9 +459,15 @@ $$
 <ImgCaption src='/img/AreaIntegrate.png'>
 </ImgCaption>
 
-任意一束进入相机的光出射光的颜色和强度，可以表示为所有进入到物体上这一点入射光被反射后的积分。这里的f函数描述了物体在任意给定点，从任意角度的入射光，得到的反射光在颜色和强度上的变化，他反应了物体材料的光学性质。这个函数
+任意一束进入相机的光出射光的颜色和强度，可以表示为所有进入到物体上这一点入射光被反射后的积分。这里的f函数描述了物体在任意给定点，从任意角度的入射光，得到的所有可能反射半球上的反射光的分布，以及它们在颜色和强度上的变化。他模拟了物体表面材料的光学性质。这个函数
 *f<sub>r</sub>*
 叫做双向反射分布函数（BRDF: Bidirectinal Reflectance Distribution Function）。
+
+<ImgCaption src='/img/BRDFs.png'>
+四种常见表面的
+<i>f<sub>r</sub></i>
+反射光线分布示意图
+</ImgCaption>
 
 实际使用的算法会根据实际使用需要，对这个理论上的公式进行各种的简化，比如：
 
@@ -496,7 +503,7 @@ $$
 
 其中F表示Frenel反射（反射光线强度与出射角关系）描述表面的导体/绝缘体反射特性；G表示表面阴影遮挡，D表示法线表面向量分布；它们描述物体表面的光滑/粗糙/坑洼等的特性和程度。
 
-<ImgCaption src='https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/MetalRoughSpheres/screenshot/screenshot.png'>
+<ImgCaption src='/img/pbr-material.png'>
 glTF模型选用的PBR光照模型。可以看到不同参数下的物体表面反射特性。
 </ImgCaption>
 
@@ -571,6 +578,14 @@ TODO: 图
 图形渲染是常用的游戏引擎（Unity，Unreal）中的一部分功能。游戏引擎封装了图形渲染API的部分（同时也封装了很多其他功能模块如物理模拟，模型预处理，声音处理等），提供给用户更多功能的GUI操作界面和编程接口，让用户集中于游戏内容的开发。使用游戏引擎开发游戏必要时也会编写适应自己需求的Shader。
 :::
 
+::: details 基于Web的图形渲染API
+随着时代发展，在我们的终端设备上进行一些3D渲染已经不再需要下载笨重的客户端程序。即使是Web网页中也有足够强大Javascript API：WebGL和WebGPU。他们不但易于运行（手机，电脑的浏览器点击链接即可），对开发者来说也非常便利（避免许多编译环境的配置），以至于很多Native端的程序也是使用它们来开发的。下面这个canvas的内容就是用WebGPU实时在网页里渲染的
+
+<project-canvas @init="init" :width=300 :height=300 />
+
+基于Javascript的图形渲染库/引擎也有像Three.js，Babylon.js这样的成熟工具可供选择。
+:::
+
 图形渲染API提供的功能，简单来说，就是让开发者方便地根据自身需求完成这两件事情：
 
 - 把CPU内存里的数据搬运到GPU内存里的Buffer（缓冲区/数据存储区）
@@ -582,6 +597,7 @@ TODO: 图
 
 GPU诞生之初，正如它名字所指，是用于解决3D图形渲染的问题。不过当你了解了GPU和图形API运作的本质：搬运数据和处理数据，就不难理解，在GPU提供了一种强大的并行计算能力后，会自然被人们发现这种算力在其他领域的作用了。人们也开发了专门用命令GPU处理通用应用领域数据的API（CUDA，OpenCL等）。现今最流行的机器学习算法神经网络正是GPU这种并行计算能力的受益者。
 
+TODO: 图
 
 ## 结语
 

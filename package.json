@@ -28,6 +28,7 @@
   "dependencies": {
     "gl-matrix": "^3.4.3",
     "markdown-it": "^13.0.1",
-    "markdown-it-mathjax3": "^4.3.2"
+    "markdown-it-mathjax3": "^4.3.2",
+    "wgpu-matrix": "^2.5.0"
   }
 }
